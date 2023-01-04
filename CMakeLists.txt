@@ -75,7 +75,6 @@ if(XTENSOR_USE_XSIMD)
 endif()
 
 if(XTENSOR_USE_TBB)
-    set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
     find_package(TBB REQUIRED)
     message(STATUS "Found intel TBB: ${TBB_INCLUDE_DIRS}")
 endif()
