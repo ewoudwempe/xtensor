@@ -7,7 +7,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 
 #include <sstream>
 #include <string>
@@ -19,17 +19,17 @@ namespace xt
 {
     TEST(xinfo, compiles)
     {
-    	xarray<double> test = {{1,2,3}, {4,5,6}};
-    	std::stringstream ss;
+        xarray<double> test = {{1,2,3}, {4,5,6}};
+        std::stringstream ss;
 
-    	ss << info(test) << std::endl;
+        ss << info(test) << std::endl;
     }
 
     TEST(xinfo, typename)
     {
-    	xarray<double> test = {{1,2,3}, {4,5,6}};
-    	auto t_s = type_to_string<typename decltype(test)::value_type>();
-    	std::string expected = "double";
-    	EXPECT_EQ(expected, t_s);
+        xarray<double> test = {{1,2,3}, {4,5,6}};
+        auto t_s = type_to_string<typename decltype(test)::value_type>();
+        std::string expected = "double";
+        EXPECT_EQ(expected, t_s);
     }
 }

@@ -21,6 +21,13 @@
 
 namespace xt
 {
+
+    /**
+     * @defgroup xt_xcomplex
+     *
+     * Defined in ``xtensor/xcomplex.hpp``
+     */
+
     /******************************
      * real and imag declarations *
      ******************************/
@@ -105,12 +112,13 @@ namespace xt
     }
 
     /**
-     * @brief Returns an \ref xexpression representing the real part of the given expression.
+     * Return an xt::xexpression representing the real part of the given expression.
      *
-     * @tparam e the \ref xexpression
+     * The returned expression either hold a const reference to @p e or a copy
+     * depending on whether @p e is an lvalue or an rvalue.
      *
-     * The returned expression either hold a const reference to \p e or a copy
-     * depending on whether \p e is an lvalue or an rvalue.
+     * @ingroup xt_xcomplex
+     * @tparam e The xt::xexpression
      */
     template <class E>
     inline decltype(auto) real(E&& e) noexcept
@@ -119,12 +127,13 @@ namespace xt
     }
 
     /**
-     * @brief Returns an \ref xexpression representing the imaginary part of the given expression.
+     * Return an xt::xexpression representing the imaginary part of the given expression.
      *
-     * @tparam e the \ref xexpression
+     * The returned expression either hold a const reference to @p e or a copy
+     * depending on whether @p e is an lvalue or an rvalue.
      *
-     * The returned expression either hold a const reference to \p e or a copy
-     * depending on whether \p e is an lvalue or an rvalue.
+     * @ingroup xt_xcomplex
+     * @tparam e The xt::xexpression
      */
     template <class E>
     inline decltype(auto) imag(E&& e) noexcept
@@ -160,35 +169,17 @@ namespace xt
                 return std::complex<T>(c.real(), -c.imag());
             }
 
+            template <class T>
+            constexpr std::complex<T> conj_impl(const T & real)
+            {
+                return std::complex<T>(real, 0);
+            }
+
 #ifdef XTENSOR_USE_XSIMD
-            template <class X>
-            constexpr X conj_impl(const xsimd::simd_complex_batch<X>& z)
+            template <class T, class A>
+            xsimd::complex_batch_type_t< xsimd::batch<T, A>> conj_impl(const xsimd::batch<T, A>& z)
             {
                 return xsimd::conj(z);
-            }
-
-            template <class T>
-            struct not_complex_batch
-                : xtl::negation<std::is_base_of<xsimd::simd_complex_batch<T>, T>>
-            {
-            };
-
-            // libc++ (OSX) conj is unfortunately broken and returns
-            // std::complex<T> instead of T.
-            // This function must be deactivated for complex batches,
-            // otherwise it will be a better match than the previous one.
-            template <class T, XTL_REQUIRES(not_complex_batch<T>)>
-            constexpr T conj_impl(const T& c)
-            {
-                return c;
-            }
-#else
-            // libc++ (OSX) conj is unfortunately broken and returns
-            // std::complex<T> instead of T.
-            template <class T>
-            constexpr T conj_impl(const T& c)
-            {
-                return c;
             }
 #endif
         }
@@ -201,9 +192,10 @@ namespace xt
 #undef UNARY_COMPLEX_FUNCTOR
 
     /**
-     * @brief Returns an \ref xfunction evaluating to the complex conjugate of the given expression.
+     * Return an xt::xfunction evaluating to the complex conjugate of the given expression.
      *
-     * @param e the \ref xexpression
+     * @ingroup xt_xcomplex
+     * @param e the xt::xexpression
      */
     template <class E>
     inline auto conj(E&& e) noexcept
@@ -214,8 +206,10 @@ namespace xt
     }
 
     /**
-     * @brief Calculates the phase angle (in radians) elementwise for the complex numbers in e.
-     * @param e the \ref xexpression
+     * Calculates the phase angle (in radians) elementwise for the complex numbers in @p e.
+     *
+     * @ingroup xt_xcomplex
+     * @param e the xt::xexpression
      */
     template <class E>
     inline auto arg(E&& e) noexcept
@@ -226,9 +220,12 @@ namespace xt
     }
 
     /**
-     * @brief Calculates the phase angle elementwise for the complex numbers in e.
-     * Note that this function might be slightly less perfomant than \ref arg.
-     * @param e the \ref xexpression
+     * Calculates the phase angle elementwise for the complex numbers in @p e.
+     *
+     * Note that this function might be slightly less perfomant than xt::arg.
+     *
+     * @ingroup xt_xcomplex
+     * @param e the xt::xexpression
      * @param deg calculate angle in degrees instead of radians
      */
     template <class E>
@@ -244,9 +241,11 @@ namespace xt
     }
 
     /**
-     * Calculates the squared magnitude elementwise for the complex numbers in e.
-     * Equivalent to pow(real(e), 2) + pow(imag(e), 2).
-     * @param e the \ref xexpression
+     * Calculates the squared magnitude elementwise for the complex numbers in @p e.
+     *
+     * Equivalent to ``xt::pow(xt::real(e), 2) + xt::pow(xt::imag(e), 2)``.
+     * @ingroup xt_xcomplex
+     * @param e the xt::xexpression
      */
     template <class E>
     inline auto norm(E&& e) noexcept

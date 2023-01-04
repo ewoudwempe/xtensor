@@ -7,14 +7,14 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 
 #include <sstream>
 #include <iostream>
 
 #include "xtensor/xcsv.hpp"
-#include "xtensor/xmath.hpp" 
-#include "xtensor/xio.hpp" 
+#include "xtensor/xmath.hpp"
+#include "xtensor/xio.hpp"
 
 namespace xt
 {

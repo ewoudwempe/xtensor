@@ -55,9 +55,23 @@ mamba install -c conda-forge xtensor
 You can directly install it from the sources:
 
 ```bash
-cmake -D CMAKE_INSTALL_PREFIX=your_install_prefix
+cmake -DCMAKE_INSTALL_PREFIX=your_install_prefix
 make install
 ```
+
+### Installing xtensor using vcpkg
+
+You can download and install xtensor using the [vcpkg](https://github.com/Microsoft/vcpkg) dependency manager:
+
+```bash
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh
+./vcpkg integrate install
+./vcpkg install xtensor
+```
+
+The xtensor port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
 
 ## Trying it online
 
@@ -83,18 +97,9 @@ library:
 
 | `xtensor` | `xtl`   |`xsimd` (optional) |
 |-----------|---------|-------------------|
-|  master   | ^0.7.0  |       ^7.4.8      |
-|  0.23.10  | ^0.7.0  |       ^7.4.8      |
-|  0.23.9   | ^0.7.0  |       ^7.4.8      |
-|  0.23.8   | ^0.7.0  |       ^7.4.8      |
-|  0.23.7   | ^0.7.0  |       ^7.4.8      |
-|  0.23.6   | ^0.7.0  |       ^7.4.8      |
-|  0.23.5   | ^0.7.0  |       ^7.4.8      |
-|  0.23.4   | ^0.7.0  |       ^7.4.8      |
-|  0.23.3   | ^0.7.0  |       ^7.4.8      |
-|  0.23.2   | ^0.7.0  |       ^7.4.8      |
-|  0.23.1   | ^0.7.0  |       ^7.4.8      |
-|  0.23.0   | ^0.7.0  |       ^7.4.8      |
+|  master   | ^0.7.0  |       ^8.0.3      |
+|  0.24.x   | ^0.7.0  |       ^8.0.3      |
+|  0.23.x   | ^0.7.0  |       ^7.4.8      |
 |  0.22.0   | ^0.6.23 |       ^7.4.8      |
 
 The dependency on `xsimd` is required if you want to enable SIMD acceleration

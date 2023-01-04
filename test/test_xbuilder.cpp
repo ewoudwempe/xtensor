@@ -11,8 +11,7 @@
 #define VS_SKIP_CONCATENATE_FIXED 1
 #endif
 
-#include "gtest/gtest.h"
-#include "test_common_macros.hpp"
+#include "test_common.hpp"
 #include "xtensor/xbuilder.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xtensor.hpp"
@@ -295,7 +294,7 @@ namespace xt
         double at_end = 99.78730976641236;
         xt::xarray<double> a = xt::linspace(0., at_end, 100);
         auto b = xt::linspace(0., at_end, 100);
-        EXPECT_EQ(a, b);
+        EXPECT_TENSOR_EQ(a, b);
     }
 
     TEST(xbuilder, logspace)
@@ -371,7 +370,7 @@ namespace xt
 
         auto t = concatenate(xtuple(arange(2), arange(2, 5), arange(5, 8)));
         ASSERT_TRUE(arange(8) == t);
-        
+
         xt::xarray<double> fa = xt::ones<double>({ 3, 4, 5, 0 });
         xt::xarray<double> sa = xt::ones<double>({ 3, 4, 5 });
         xt::xarray<double> ta = xt::ones<double>({ 3, 4, 5, 3 });

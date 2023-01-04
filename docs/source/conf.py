@@ -16,10 +16,11 @@ html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 def setup(app):
-    app.add_stylesheet("main_stylesheet.css")
+    app.add_css_file("main_stylesheet.css")
 
 extensions = ['breathe']
 breathe_projects = { 'xtensor': '../xml' }
+breathe_default_project = "xtensor"
 templates_path = ['_templates']
 html_static_path = ['_static']
 source_suffix = '.rst'
@@ -45,4 +46,6 @@ extensions += ['sphinx.ext.intersphinx']
 intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "xtensor-blas": ("https://xtensor-blas.readthedocs.io/en/stable", None),
+    "xtl": ("https://xtl.readthedocs.io/en/stable", None),
 }

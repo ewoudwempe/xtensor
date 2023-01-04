@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xtensor.hpp"
 #include "xtensor/xmath.hpp"
@@ -87,4 +87,3 @@ namespace xt
         EXPECT_TRUE(xt::allclose(f, py_f));
     }
 }
-

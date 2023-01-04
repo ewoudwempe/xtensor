@@ -34,7 +34,6 @@ namespace xt
     struct xcontainer_iterable_types
     {
         using inner_shape_type = typename xcontainer_inner_types<D>::inner_shape_type;
-        using storage_type = typename xcontainer_inner_types<D>::storage_type;
         using stepper = xstepper<D>;
         using const_stepper = xstepper<const D>;
     };
@@ -108,10 +107,10 @@ namespace xt
         using data_alignment = xt_simd::container_alignment_t<storage_type>;
         using simd_type = xt_simd::simd_type<value_type>;
 
-        using storage_iterator = typename iterable_base::storage_iterator;
-        using const_storage_iterator = typename iterable_base::const_storage_iterator;
-        using reverse_storage_iterator = typename iterable_base::reverse_storage_iterator;
-        using const_reverse_storage_iterator = typename iterable_base::const_reverse_storage_iterator;
+        using linear_iterator = typename iterable_base::linear_iterator;
+        using const_linear_iterator = typename iterable_base::const_linear_iterator;
+        using reverse_linear_iterator = typename iterable_base::reverse_linear_iterator;
+        using const_reverse_linear_iterator = typename iterable_base::const_reverse_linear_iterator;
 
         static_assert(static_layout != layout_type::any, "Container layout can never be layout_type::any!");
 
@@ -189,24 +188,24 @@ namespace xt
         container_simd_return_type_t<storage_type, value_type, requested_type>
         /*simd_return_type<requested_type>*/ load_simd(size_type i) const;
 
-        storage_iterator storage_begin() noexcept;
-        storage_iterator storage_end() noexcept;
+        linear_iterator linear_begin() noexcept;
+        linear_iterator linear_end() noexcept;
 
-        const_storage_iterator storage_begin() const noexcept;
-        const_storage_iterator storage_end() const noexcept;
-        const_storage_iterator storage_cbegin() const noexcept;
-        const_storage_iterator storage_cend() const noexcept;
+        const_linear_iterator linear_begin() const noexcept;
+        const_linear_iterator linear_end() const noexcept;
+        const_linear_iterator linear_cbegin() const noexcept;
+        const_linear_iterator linear_cend() const noexcept;
 
-        reverse_storage_iterator storage_rbegin() noexcept;
-        reverse_storage_iterator storage_rend() noexcept;
+        reverse_linear_iterator linear_rbegin() noexcept;
+        reverse_linear_iterator linear_rend() noexcept;
 
-        const_reverse_storage_iterator storage_rbegin() const noexcept;
-        const_reverse_storage_iterator storage_rend() const noexcept;
-        const_reverse_storage_iterator storage_crbegin() const noexcept;
-        const_reverse_storage_iterator storage_crend() const noexcept;
+        const_reverse_linear_iterator linear_rbegin() const noexcept;
+        const_reverse_linear_iterator linear_rend() const noexcept;
+        const_reverse_linear_iterator linear_crbegin() const noexcept;
+        const_reverse_linear_iterator linear_crend() const noexcept;
 
-        using container_iterator = storage_iterator;
-        using const_container_iterator = const_storage_iterator;
+        using container_iterator = linear_iterator;
+        using const_container_iterator = const_linear_iterator;
 
     protected:
 
@@ -423,7 +422,7 @@ namespace xt
     template <class T>
     inline void xcontainer<D>::fill(const T& value)
     {
-        std::fill(storage_begin(), storage_end(), value);
+        std::fill(linear_begin(), linear_end(), value);
     }
 
     /**
@@ -438,7 +437,7 @@ namespace xt
     {
         XTENSOR_TRY(check_index(shape(), args...));
         XTENSOR_CHECK_DIMENSION(shape(), args...);
-        size_type index = xt::data_offset<size_type>(strides(), static_cast<std::ptrdiff_t>(args)...);
+        size_type index = xt::data_offset<size_type>(strides(), args...);
         return storage()[index];
     }
 
@@ -454,7 +453,7 @@ namespace xt
     {
         XTENSOR_TRY(check_index(shape(), args...));
         XTENSOR_CHECK_DIMENSION(shape(), args...);
-        size_type index = xt::data_offset<size_type>(strides(), static_cast<std::ptrdiff_t>(args)...);
+        size_type index = xt::data_offset<size_type>(strides(), args...);
         return storage()[index];
     }
 
@@ -573,10 +572,10 @@ namespace xt
     }
 
     /**
-    * Returns a constant pointer to the underlying array serving as element storage. The pointer
-    * is such that range [data(); data() + size()] is always a valid range, even if the
-    * container is empty (data() is not is not dereferenceable in that case)
-    */
+     * Returns a constant pointer to the underlying array serving as element storage. The pointer
+     * is such that range [data(); data() + size()] is always a valid range, even if the
+     * container is empty (data() is not is not dereferenceable in that case)
+     */
     template <class D>
     inline auto xcontainer<D>::data() const noexcept -> const_pointer
     {
@@ -648,15 +647,29 @@ namespace xt
         return storage()[i];
     }
 
+    /**
+     * Returns a reference to the element at the specified position in the containter
+     * storage (as if it was one dimensional).
+     * @param i index specifying the position in the storage.
+     * Must be smaller than the number of elements in the container.
+     */
     template <class D>
     inline auto xcontainer<D>::flat(size_type i) -> reference
     {
+        XTENSOR_ASSERT(i < size());
         return storage()[i];
     }
 
+    /**
+     * Returns a constant reference to the element at the specified position in the containter
+     * storage (as if it was one dimensional).
+     * @param i index specifying the position in the storage.
+     * Must be smaller than the number of elements in the container.
+     */
     template <class D>
     inline auto xcontainer<D>::flat(size_type i) const -> const_reference
     {
+        XTENSOR_ASSERT(i < size());
         return storage()[i];
     }
 
@@ -725,87 +738,86 @@ namespace xt
     inline void xcontainer<D>::store_simd(size_type i, const simd& e)
     {
         using align_mode = driven_align_mode_t<alignment, data_alignment>;
-        xt_simd::store_simd<value_type, typename simd::value_type>(std::addressof(storage()[i]), e, align_mode());
+        xt_simd::store_as(std::addressof(storage()[i]), e, align_mode());
     }
 
     template <class D>
     template <class alignment, class requested_type, std::size_t N>
     inline auto xcontainer<D>::load_simd(size_type i) const
         -> container_simd_return_type_t<storage_type, value_type, requested_type>
-        //-> simd_return_type<requested_type>
     {
         using align_mode = driven_align_mode_t<alignment, data_alignment>;
-        return xt_simd::load_simd<value_type, requested_type>(std::addressof(storage()[i]), align_mode());
+        return xt_simd::load_as<requested_type>(std::addressof(storage()[i]), align_mode());
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_begin() noexcept -> storage_iterator
+    inline auto xcontainer<D>::linear_begin() noexcept -> linear_iterator
     {
         return storage().begin();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_end() noexcept -> storage_iterator
+    inline auto xcontainer<D>::linear_end() noexcept -> linear_iterator
     {
         return storage().end();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_begin() const noexcept -> const_storage_iterator
+    inline auto xcontainer<D>::linear_begin() const noexcept -> const_linear_iterator
     {
         return storage().begin();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_end() const noexcept -> const_storage_iterator
+    inline auto xcontainer<D>::linear_end() const noexcept -> const_linear_iterator
     {
         return storage().cend();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_cbegin() const noexcept -> const_storage_iterator
+    inline auto xcontainer<D>::linear_cbegin() const noexcept -> const_linear_iterator
     {
         return storage().cbegin();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_cend() const noexcept -> const_storage_iterator
+    inline auto xcontainer<D>::linear_cend() const noexcept -> const_linear_iterator
     {
         return storage().cend();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_rbegin() noexcept -> reverse_storage_iterator
+    inline auto xcontainer<D>::linear_rbegin() noexcept -> reverse_linear_iterator
     {
         return storage().rbegin();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_rend() noexcept -> reverse_storage_iterator
+    inline auto xcontainer<D>::linear_rend() noexcept -> reverse_linear_iterator
     {
         return storage().rend();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_rbegin() const noexcept -> const_reverse_storage_iterator
+    inline auto xcontainer<D>::linear_rbegin() const noexcept -> const_reverse_linear_iterator
     {
         return storage().rbegin();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_rend() const noexcept -> const_reverse_storage_iterator
+    inline auto xcontainer<D>::linear_rend() const noexcept -> const_reverse_linear_iterator
     {
         return storage().rend();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_crbegin() const noexcept -> const_reverse_storage_iterator
+    inline auto xcontainer<D>::linear_crbegin() const noexcept -> const_reverse_linear_iterator
     {
         return storage().crbegin();
     }
 
     template <class D>
-    inline auto xcontainer<D>::storage_crend() const noexcept -> const_reverse_storage_iterator
+    inline auto xcontainer<D>::linear_crend() const noexcept -> const_reverse_linear_iterator
     {
         return storage().crend();
     }

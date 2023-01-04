@@ -374,76 +374,76 @@ namespace xt
     //@}
 
     /**
-    * @name Constructors from initializer list
-    */
+     * @name Constructors from initializer list
+     */
     //@{
     /**
-    * Allocates a one-dimensional xoptional_assembly.
-    * @param t the elements of the xoptional_assembly
-    */
+     * Allocates a one-dimensional xoptional_assembly.
+     * @param t the elements of the xoptional_assembly
+     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 1> t)
         : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
-        condition ? detail::nested_optional_copy(this->storage_begin(), t)
+        condition ? detail::nested_optional_copy(this->linear_begin(), t)
                   : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
 
     /**
-    * Allocates a two-dimensional xoptional_assembly.
-    * @param t the elements of the xoptional_assembly
-    */
+     * Allocates a two-dimensional xoptional_assembly.
+     * @param t the elements of the xoptional_assembly
+     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 2> t)
         : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
-        condition ? detail::nested_optional_copy(this->storage_begin(), t)
+        condition ? detail::nested_optional_copy(this->linear_begin(), t)
                   : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
 
     /**
-    * Allocates a three-dimensional xoptional_assembly.
-    * @param t the elements of the xoptional_assembly
-    */
+     * Allocates a three-dimensional xoptional_assembly.
+     * @param t the elements of the xoptional_assembly
+     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 3> t)
         : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
-        condition ? detail::nested_optional_copy(this->storage_begin(), t)
+        condition ? detail::nested_optional_copy(this->linear_begin(), t)
                   : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
 
     /**
-    * Allocates a four-dimensional xoptional_assembly.
-    * @param t the elements of the xoptional_assembly
-    */
+     * Allocates a four-dimensional xoptional_assembly.
+     * @param t the elements of the xoptional_assembly
+     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 4> t)
         : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
-        condition ? detail::nested_optional_copy(this->storage_begin(), t)
+        condition ? detail::nested_optional_copy(this->linear_begin(), t)
                   : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
 
     /**
-    * Allocates a five-dimensional xoptional_assembly.
-    * @param t the elements of the xoptional_assembly
-    */
+     * Allocates a five-dimensional xoptional_assembly.
+     * @param t the elements of the xoptional_assembly
+     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 5> t)
         : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
-        condition ? detail::nested_optional_copy(this->storage_begin(), t)
+        condition ? detail::nested_optional_copy(this->linear_begin(), t)
                   : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
     //@}

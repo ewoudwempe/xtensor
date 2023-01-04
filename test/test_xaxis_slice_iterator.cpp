@@ -7,7 +7,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xaxis_slice_iterator.hpp"
 
@@ -51,10 +51,10 @@ namespace xt
 
         dist = std::distance(axis_slice_begin(a, 1), axis_slice_end(a, 1));
         EXPECT_EQ(8, dist);
-       
+
         dist = std::distance(axis_slice_begin(a_col, 1), axis_slice_end(a_col, 1));
         EXPECT_EQ(8, dist);
-       
+
         dist = std::distance(axis_slice_begin(a, 2), axis_slice_end(a, 2));
         EXPECT_EQ(6, dist);
 

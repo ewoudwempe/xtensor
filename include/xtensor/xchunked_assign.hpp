@@ -34,7 +34,7 @@ namespace xt
     /*********************************
      * xchunked_semantic declaration *
      *********************************/
-    
+
     template <class D>
     class xchunked_semantic : public xsemantic_base<D>
     {
@@ -123,7 +123,7 @@ namespace xt
         struct xchunk_iterator_view
         {
             using reference = decltype(xt::strided_view(std::declval<V>().expression(), std::declval<xstrided_slice_vector>()));
-            
+
             inline auto get_chunk(V& view, typename V::size_type, const xstrided_slice_vector& sv) const
             {
                 return xt::strided_view(view.expression(), sv);
@@ -135,7 +135,7 @@ namespace xt
         struct xchunk_iterator_base
             : std::conditional_t<is_xchunked_array<std::decay_t<T>>::value,
                                  xchunk_iterator_array<T>,
-                                 std::conditional_t<is_xchunked_view<T>::value,
+                                 std::conditional_t<is_xchunked_view<std::decay_t<T>>::value,
                                                     xchunk_iterator_view<T>,
                                                     invalid_chunk_iterator>>
         {
@@ -164,13 +164,15 @@ namespace xt
         xchunk_iterator(E& chunked_expression,
                         shape_type&& chunk_index,
                         size_type chunk_linear_index);
-        
+
         self_type& operator++();
         self_type operator++(int);
         decltype(auto) operator*() const;
 
         bool operator==(const self_type& rhs) const;
         bool operator!=(const self_type& rhs) const;
+
+        const shape_type& chunk_index() const;
 
         const slice_vector& get_slice_vector() const;
         slice_vector get_chunk_slice_vector() const;
@@ -334,9 +336,15 @@ namespace xt
     }
 
     template <class E>
-    inline auto xchunk_iterator<E>::get_slice_vector() const -> const slice_vector& 
+    inline auto xchunk_iterator<E>::get_slice_vector() const -> const slice_vector&
     {
         return m_slice_vector;
+    }
+
+    template <class E>
+    auto xchunk_iterator<E>::chunk_index() const -> const shape_type&
+    {
+        return m_chunk_index;
     }
 
     template <class E>
@@ -364,4 +372,3 @@ namespace xt
 }
 
 #endif
-

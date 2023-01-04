@@ -10,6 +10,8 @@
 #ifndef XTENSOR_LAYOUT_HPP
 #define XTENSOR_LAYOUT_HPP
 
+#include <type_traits>
+
 // Do not include anything else here.
 // xlayout.hpp is included in xtensor_forward.hpp
 // and we don't want to bring other headers to it.
@@ -33,15 +35,14 @@ namespace xt
     /**
      * Implementation of the following logical table:
      *
-     * @verbatim
-         | d | a | r | c |
-       --+---+---+---+---+
-       d | d | d | d | d |
-       a | d | a | r | c |
-       r | d | r | r | d |
-       c | d | c | d | c |
-       d = dynamic, a = any, r = row_major, c = column_major.
-       @endverbatim
+     *        | d | a | r | c |
+     *      --+---+---+---+---+
+     *      d | d | d | d | d |
+     *      a | d | a | r | c |
+     *      r | d | r | r | d |
+     *      c | d | c | d | c |
+     *      d = dynamic, a = any, r = row_major, c = column_major.
+     *
      * Using bitmasks to avoid nested if-else statements.
      *
      * @param args the input layouts.

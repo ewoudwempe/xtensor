@@ -22,6 +22,13 @@
 
 namespace xt
 {
+    /**
+     * @defgroup xt_xsort Sorting functions.
+     *
+     * Because sorting functions need to access the tensor data repeatedly, they evaluate their
+     * input and may allocate temporaries.
+     */
+
     namespace detail
     {
         template <class T>
@@ -152,7 +159,7 @@ namespace xt
         {
             const auto& de = e.derived_cast();
             R ev;
-            ev.resize({de.size()});
+            ev.resize({static_cast<typename R::shape_type::value_type>(de.size())});
 
             std::copy(de.cbegin(), de.cend(), ev.begin());
             std::sort(ev.begin(), ev.end());
@@ -187,6 +194,7 @@ namespace xt
      * The sort is performed using the ``std::sort`` functions.
      * A copy of the xexpression is created and returned.
      *
+     * @ingroup xt_xsort
      * @param e xexpression to sort
      * @param axis axis along which sort is performed
      *
@@ -279,15 +287,15 @@ namespace xt
             {
                 n_iters = std::accumulate(data.shape().begin(), data.shape().end() - 1,
                                           std::size_t(1), std::multiplies<>());
-                data_secondary_stride = data.shape(data.dimension() - 1);
-                inds_secondary_stride = inds.shape(inds.dimension() - 1);
+                data_secondary_stride = static_cast<std::ptrdiff_t>(data.shape(data.dimension() - 1));
+                inds_secondary_stride = static_cast<std::ptrdiff_t>(inds.shape(inds.dimension() - 1));
             }
             else
             {
                 n_iters = std::accumulate(data.shape().begin() + 1, data.shape().end(),
                                           std::size_t(1), std::multiplies<>());
-                data_secondary_stride = data.shape(0);
-                inds_secondary_stride = inds.shape(0);
+                data_secondary_stride = static_cast<std::ptrdiff_t>(data.shape(0));
+                inds_secondary_stride = static_cast<std::ptrdiff_t>(inds.shape(0));
             }
 
             auto ptr = data.data();
@@ -337,6 +345,7 @@ namespace xt
      * of indices of the same shape as e that index data along the given axis in
      * sorted order.
      *
+     * @ingroup xt_xsort
      * @param e xexpression to argsort
      * @param axis axis along which argsort is performed
      *
@@ -399,6 +408,7 @@ namespace xt
      * std::cout << xt::partition(a, {0, 3}) << std::endl; // {-10, 1, 10, 123} the correct entries at index 0 and 3
      * \endcode
      *
+     * @ingroup xt_xsort
      * @param e input xexpression
      * @param kth_container a container of ``indices`` that should contain the correctly sorted value
      * @param axis either integer (default = -1) to sort along last axis or ``xnone()`` to flatten before sorting
@@ -418,13 +428,13 @@ namespace xt
             std::sort(kth_copy.begin(), kth_copy.end());
         }
 
-        std::copy(de.storage_cbegin(), de.storage_cend(), ev.storage_begin()); // flatten
+        std::copy(de.linear_cbegin(), de.linear_cend(), ev.linear_begin()); // flatten
         std::size_t k_last = kth_copy.back();
-        std::nth_element(ev.storage_begin(), ev.storage_begin() + k_last, ev.storage_end());
+        std::nth_element(ev.linear_begin(), ev.linear_begin() + k_last, ev.linear_end());
 
         for (auto it = (kth_copy.rbegin() + 1); it != kth_copy.rend(); ++it)
         {
-            std::nth_element(ev.storage_begin(), ev.storage_begin() + *it, ev.storage_begin() + k_last);
+            std::nth_element(ev.linear_begin(), ev.linear_begin() + *it, ev.linear_begin() + k_last);
             k_last = *it;
         }
 
@@ -530,6 +540,7 @@ namespace xt
      * std::cout << xt::argpartition(a, {0, 3}) << std::endl; // {2, 0, 1, 3} the correct entries at index 0 and 3
      * \endcode
      *
+     * @ingroup xt_xsort
      * @param e input xexpression
      * @param kth_container a container of ``indices`` that should contain the correctly sorted value
      * @param axis either integer (default = -1) to sort along last axis or ``xnone()`` to flatten before sorting
@@ -558,13 +569,13 @@ namespace xt
             return de[a] < de[b];
         };
 
-        std::iota(ev.storage_begin(), ev.storage_end(), 0);
+        std::iota(ev.linear_begin(), ev.linear_end(), 0);
         std::size_t k_last = kth_copy.back();
-        std::nth_element(ev.storage_begin(), ev.storage_begin() + k_last, ev.storage_end(), arg_lambda);
+        std::nth_element(ev.linear_begin(), ev.linear_begin() + k_last, ev.linear_end(), arg_lambda);
 
         for (auto it = (kth_copy.rbegin() + 1); it != kth_copy.rend(); ++it)
         {
-            std::nth_element(ev.storage_begin(), ev.storage_begin() + *it, ev.storage_begin() + k_last, arg_lambda);
+            std::nth_element(ev.linear_begin(), ev.linear_begin() + *it, ev.linear_begin() + k_last, arg_lambda);
             k_last = *it;
         }
 
@@ -724,6 +735,7 @@ namespace xt
      * sorted copy of V, V_sorted - i e., V_sorted[(N-1)/2], when N is odd,
      * and the average of the two middle values of V_sorted when N is even.
      *
+     * @ingroup xt_xsort
      * @param axis axis along which the medians are computed.
      *             If not set, computes the median along a flattened version of the input.
      * @param e input xexpression
@@ -768,31 +780,6 @@ namespace xt
             using type = xtensor<std::size_t, N - 1>;
         };
 
-        template <class IT, class F>
-        inline std::size_t cmp_idx(IT iter, IT end, std::ptrdiff_t inc, F&& cmp)
-        {
-            std::size_t idx = 0;
-            auto min = *iter;
-            iter += inc;
-            for (std::size_t i = 1; iter < end; iter += inc, ++i)
-            {
-                if (cmp(*iter, min))
-                {
-                    min = *iter;
-                    idx = i;
-                }
-            }
-            return idx;
-        }
-
-        template <layout_type L, class E, class F>
-        inline xtensor<std::size_t, 0> arg_func_impl(const E& e, F&& f)
-        {
-            return cmp_idx(e.template begin<L>(),
-                           e.template end<L>(), 1,
-                           std::forward<F>(f));
-        }
-
         template <layout_type L, class E, class F>
         inline typename argfunc_result_type<E>::type
         arg_func_impl(const E& e, std::size_t axis, F&& cmp)
@@ -804,7 +791,10 @@ namespace xt
 
             if (e.dimension() == 1)
             {
-                return arg_func_impl<L>(e, std::forward<F>(cmp));
+                auto begin = e.template begin<L>();
+                auto end = e.template end<L>();
+                std::size_t i = static_cast<std::size_t>(std::distance(begin, std::min_element(begin, end)));
+                return xtensor<size_t, 0>{i};
             }
 
             result_shape_type alt_shape;
@@ -857,14 +847,19 @@ namespace xt
     {
         using value_type = typename E::value_type;
         auto&& ed = eval(e.derived_cast());
-        return detail::arg_func_impl<L>(ed, std::less<value_type>());
+        auto begin = ed.template begin<L>();
+        auto end = ed.template end<L>();
+        std::size_t i = static_cast<std::size_t>(std::distance(begin, std::min_element(begin, end)));
+        return xtensor<size_t, 0>{i};
     }
 
     /**
-     * Find position of minimal value in xexpression
+     * Find position of minimal value in xexpression.
+     * By default, the returned index is into the flattened array.
+     * If `axis` is specified, the indices are along the specified axis.
      *
      * @param e input xexpression
-     * @param axis select axis (or none)
+     * @param axis select axis (optional)
      *
      * @return returns xarray with positions of minimal value
      */
@@ -882,14 +877,20 @@ namespace xt
     {
         using value_type = typename E::value_type;
         auto&& ed = eval(e.derived_cast());
-        return detail::arg_func_impl<L>(ed, std::greater<value_type>());
+        auto begin = ed.template begin<L>();
+        auto end = ed.template end<L>();
+        std::size_t i = static_cast<std::size_t>(std::distance(begin, std::max_element(begin, end)));
+        return xtensor<size_t, 0>{i};
     }
 
     /**
      * Find position of maximal value in xexpression
+     * By default, the returned index is into the flattened array.
+     * If `axis` is specified, the indices are along the specified axis.
      *
+     * @ingroup xt_xsort
      * @param e input xexpression
-     * @param axis select axis (or none)
+     * @param axis select axis (optional)
      *
      * @return returns xarray with positions of maximal value
      */
@@ -906,6 +907,7 @@ namespace xt
      * Find unique elements of a xexpression. This returns a flattened xtensor with
      * sorted, unique elements from the original expression.
      *
+     * @ingroup xt_xsort
      * @param e input xexpression (will be flattened)
      */
     template <class E>
@@ -925,6 +927,7 @@ namespace xt
      * Find the set difference of two xexpressions. This returns a flattened xtensor with
      * the sorted, unique values in ar1 that are not in ar2.
      *
+     * @ingroup xt_xsort
      * @param ar1 input xexpression (will be flattened)
      * @param ar2 input xexpression
      */

@@ -92,19 +92,22 @@ namespace xtl
 
 namespace xt
 {
+    /**
+     * @defgroup xt_xshape Support functions to get/check a shape array.
+     */
+
     /**************
      * same_shape *
      **************/
 
     /**
-    * @ingroup same_shape
-    * @brief same_shape
-    *
-    * Check if two objects have the same shape.
-    * @param s1 an array
-    * @param s2 an array
-    * @return bool
-    */
+     * Check if two objects have the same shape.
+     *
+     * @ingroup xt_xshape
+     * @param s1 an array
+     * @param s2 an array
+     * @return bool
+     */
     template <class S1, class S2>
     inline bool same_shape(const S1& s1, const S2& s2) noexcept
     {
@@ -116,14 +119,13 @@ namespace xt
      *************/
 
     /**
-    * @ingroup has_shape
-    * @brief has_shape
-    *
-    * Check if an object has a certain shape.
-    * @param a an array
-    * @param shape the shape to test
-    * @return bool
-    */
+     * Check if an object has a certain shape.
+     *
+     * @ingroup xt_xshape
+     * @param a an array
+     * @param shape the shape to test
+     * @return bool
+     */
     template <class E, class S>
     inline bool has_shape(const E& e, std::initializer_list<S> shape) noexcept
     {
@@ -131,14 +133,13 @@ namespace xt
     }
 
     /**
-    * @ingroup has_shape
-    * @brief has_shape
-    *
-    * Check if an object has a certain shape.
-    * @param a an array
-    * @param shape the shape to test
-    * @return bool
-    */
+     * Check if an object has a certain shape.
+     *
+     * @ingroup has_shape
+     * @param a an array
+     * @param shape the shape to test
+     * @return bool
+     */
     template <class E, class S, class = typename std::enable_if_t<has_iterator_interface<S>::value>>
     inline bool has_shape(const E& e, const S& shape)
     {
@@ -247,8 +248,10 @@ namespace xt
      * Compute a layout based on a layout and a shape type.
      *
      * The main functionality of this function is that it reduces vectors to
-     * ``layout_type::any`` so that assigning a row major 1D container to another
+     * ``xt::layout_type::any`` so that assigning a row major 1D container to another
      * row_major container becomes free.
+     *
+     * @ingroup xt_xshape
      */
     template <layout_type L, class S>
     struct select_layout
@@ -487,6 +490,9 @@ namespace xt
         using type = typename detail::promote_index<S...>::type;
     };
 
+    /**
+     * @ingroup xt_xshape
+     */
     template <class... S>
     using promote_shape_t = typename promote_shape<S...>::type;
 
@@ -496,6 +502,9 @@ namespace xt
         using type = typename detail::promote_index<S...>::type;
     };
 
+    /**
+     * @ingroup xt_xshape
+     */
     template <class... S>
     using promote_strides_t = typename promote_strides<S...>::type;
 
@@ -505,6 +514,9 @@ namespace xt
         using type = typename detail::index_from_shape_impl<S>::type;
     };
 
+    /**
+     * @ingroup xt_xshape
+     */
     template <class S>
     using index_from_shape_t = typename index_from_shape<S>::type;
 
@@ -532,6 +544,9 @@ namespace xt
     {
     };
 
+    /**
+     * @ingroup xt_xshape
+     */
     template <class S>
     using filter_fixed_shape_t = typename filter_fixed_shape<S>::type;
 }

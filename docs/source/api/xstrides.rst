@@ -4,10 +4,11 @@
 
    The full license is in the file LICENSE, distributed with this software.
 
-chunked_array
-=============
+xshape
+======
 
-Defined in ``xtensor/xchunked_array.hpp``
+Defined in ``xtensor/xstride.hpp``
 
-.. doxygenfunction:: xt::chunked_array
-   :project: xtensor
+.. doxygenfunction:: auto strides(const E& e, xt::stride_type type)
+
+.. doxygenfunction:: auto strides(const E& e, S axis, xt::stride_type type)

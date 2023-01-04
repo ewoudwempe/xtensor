@@ -7,14 +7,14 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xchunked_array.hpp"
 #include "xtensor/xchunked_view.hpp"
 
 namespace xt
 {
-	TEST(xchunked_view, iterate)
+    TEST(xchunked_view, iterate)
     {
         std::vector<std::size_t> shape = {3, 4};
         std::vector<std::size_t> chunk_shape = {1, 2};

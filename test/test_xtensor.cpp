@@ -7,7 +7,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 #include "xtensor/xtensor.hpp"
 #include "xtensor/xarray.hpp"
 #include "test_common.hpp"
@@ -44,22 +44,22 @@ namespace xt
 
     TEST(xtensor, shaped_constructor)
     {
+        SUBCASE("row_major constructor")
         {
-            SCOPED_TRACE("row_major constructor");
             row_major_result<storage_type> rm;
             xtensor_dynamic ra(rm.m_shape, layout_type::row_major);
             compare_shape(ra, rm);
         }
 
+        SUBCASE("column_major constructor")
         {
-            SCOPED_TRACE("column_major constructor");
             column_major_result<storage_type> cm;
             xtensor_dynamic ca(cm.m_shape, layout_type::column_major);
             compare_shape(ca, cm);
         }
 
+        SUBCASE("from shape")
         {
-            SCOPED_TRACE("from shape");
             std::array<std::size_t, 3> shp = {5, 4, 2};
             std::vector<std::size_t> shp_as_vec = {5, 4, 2};
             auto ca = xtensor<int, 3>::from_shape({3, 2, 1});
@@ -79,8 +79,8 @@ namespace xt
 
     TEST(xtensor, valued_constructor)
     {
+        SUBCASE("row_major valued constructor")
         {
-            SCOPED_TRACE("row_major valued constructor");
             row_major_result<storage_type> rm;
             int value = 2;
             xtensor_dynamic ra(rm.m_shape, value, layout_type::row_major);
@@ -89,8 +89,8 @@ namespace xt
             EXPECT_EQ(ra.storage(), vec);
         }
 
+        SUBCASE("column_major valued constructor")
         {
-            SCOPED_TRACE("column_major valued constructor");
             column_major_result<storage_type> cm;
             int value = 2;
             xtensor_dynamic ca(cm.m_shape, value, layout_type::column_major);
@@ -123,15 +123,15 @@ namespace xt
         int value = 2;
         xtensor_dynamic a(res.m_shape, res.m_strides, value);
 
+        SUBCASE("copy constructor")
         {
-            SCOPED_TRACE("copy constructor");
             xtensor_dynamic b(a);
             compare_shape(a, b);
             EXPECT_EQ(a.storage(), b.storage());
         }
 
+        SUBCASE("assignment operator")
         {
-            SCOPED_TRACE("assignment operator");
             row_major_result<storage_type> r;
             xtensor_dynamic c(r.m_shape, 0);
             EXPECT_NE(a.storage(), c.storage());
@@ -147,16 +147,16 @@ namespace xt
         int value = 2;
         xtensor_dynamic a(res.m_shape, res.m_strides, value);
 
+        SUBCASE("move constructor")
         {
-            SCOPED_TRACE("move constructor");
             xtensor_dynamic tmp(a);
             xtensor_dynamic b(std::move(tmp));
             compare_shape(a, b);
             EXPECT_EQ(a.storage(), b.storage());
         }
 
+        SUBCASE("move assignment")
         {
-            SCOPED_TRACE("move assignment");
             row_major_result<storage_type> r;
             xtensor_dynamic c(r.m_shape, 0);
             EXPECT_NE(a.storage(), c.storage());
@@ -165,6 +165,56 @@ namespace xt
             compare_shape(a, c);
             EXPECT_EQ(a.storage(), c.storage());
         }
+    }
+
+    TEST(xtensor, missing)
+    {
+        xt::xtensor<int, 2> a
+           {{0, 1, 2},
+            {3, 4, 5},
+            {6, 7, 8}};
+
+        EXPECT_EQ(a(0), 0);
+        EXPECT_EQ(a(1), 1);
+        EXPECT_EQ(a(2), 2);
+        EXPECT_EQ(a(0, 0), 0);
+        EXPECT_EQ(a(1, 0), 3);
+        EXPECT_EQ(a(2, 0), 6);
+        EXPECT_EQ(a(xt::missing), 0);
+        EXPECT_EQ(a(0, xt::missing), 0);
+        EXPECT_EQ(a(1, xt::missing), 3);
+        EXPECT_EQ(a(2, xt::missing), 6);
+        EXPECT_EQ(a(0, 0), 0);
+        EXPECT_EQ(a(0, 1), 1);
+        EXPECT_EQ(a(0, 2), 2);
+        EXPECT_EQ(a(1, 0), 3);
+        EXPECT_EQ(a(1, 1), 4);
+        EXPECT_EQ(a(1, 2), 5);
+        EXPECT_EQ(a(2, 0), 6);
+        EXPECT_EQ(a(2, 1), 7);
+        EXPECT_EQ(a(2, 2), 8);
+        EXPECT_EQ(a(9, 9, 9, 0, 0), 0);
+        EXPECT_EQ(a(9, 9, 9, 0, 1), 1);
+        EXPECT_EQ(a(9, 9, 9, 0, 2), 2);
+        EXPECT_EQ(a(9, 9, 9, 1, 0), 3);
+        EXPECT_EQ(a(9, 9, 9, 1, 1), 4);
+        EXPECT_EQ(a(9, 9, 9, 1, 2), 5);
+        EXPECT_EQ(a(9, 9, 9, 2, 0), 6);
+        EXPECT_EQ(a(9, 9, 9, 2, 1), 7);
+        EXPECT_EQ(a(9, 9, 9, 2, 2), 8);
+
+        EXPECT_EQ(a.periodic(-1, xt::missing), a(2, xt::missing));
+        EXPECT_EQ(a.periodic(-2, xt::missing), a(1, xt::missing));
+        EXPECT_EQ(a.periodic(-3, xt::missing), a(0, xt::missing));
+
+        EXPECT_EQ(a.at(0, xt::missing), a.at(0, 0));
+        EXPECT_EQ(a.at(1, xt::missing), a.at(1, 0));
+        EXPECT_EQ(a.at(2, xt::missing), a.at(2, 0));
+
+        EXPECT_TRUE(a.in_bounds(0, xt::missing));
+        EXPECT_TRUE(a.in_bounds(1, xt::missing));
+        EXPECT_TRUE(a.in_bounds(2, xt::missing));
+        EXPECT_FALSE(a.in_bounds(3, xt::missing));
     }
 
     TEST(xtensor, resize)
@@ -333,6 +383,19 @@ namespace xt
         EXPECT_TRUE(idx==jdx);
     }
 
+    TEST(xarray, operator_brace)
+    {
+#ifdef XTENSOR_ENABLE_ASSERT
+        xt::xtensor<size_t, 2> a = {{0,1,2}, {3,4,5}};
+        EXPECT_THROW(a(2, 0), std::runtime_error);
+        EXPECT_THROW(a(0, 3), std::runtime_error);
+
+        xt::xtensor<size_t, 2> b = {{0,1,2}};
+        EXPECT_THROW(a(0, 3), std::runtime_error);
+        EXPECT_THROW(a(1, 3), std::runtime_error);
+#endif
+    }
+
     TEST(xtensor, periodic)
     {
         xt::xtensor<size_t,2> a = {{0,1,2}, {3,4,5}};
@@ -352,6 +415,9 @@ namespace xt
             a.flat(4) = 40;
             a.flat(5) = 50;
             EXPECT_EQ(a, b);
+#ifdef XTENSOR_ENABLE_ASSERT
+            EXPECT_THROW(a.flat(6), std::runtime_error);
+#endif
         }
         {
             xt::xtensor<size_t, 2, xt::layout_type::column_major> a = {{0,1,2}, {3,4,5}};
@@ -360,6 +426,9 @@ namespace xt
             a.flat(3) = 40;
             a.flat(5) = 50;
             EXPECT_EQ(a, b);
+#ifdef XTENSOR_ENABLE_ASSERT
+            EXPECT_THROW(a.flat(6), std::runtime_error);
+#endif
         }
     }
 

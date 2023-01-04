@@ -7,7 +7,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xtensor.hpp"
 #include "xtensor/xfixed.hpp"
@@ -48,4 +48,3 @@ namespace xt
         EXPECT_TRUE((std::is_same<xt::common_tensor_type_t<decltype(b2), decltype(b3)>, decltype(b2)>::value));
     }
 }
-

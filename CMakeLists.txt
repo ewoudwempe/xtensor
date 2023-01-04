@@ -8,7 +8,7 @@
 ############################################################################
 
 cmake_minimum_required(VERSION 3.1)
-project(xtensor)
+project(xtensor CXX)
 
 set(XTENSOR_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -33,7 +33,7 @@ set(xtl_REQUIRED_VERSION 0.7.0)
 if(TARGET xtl)
     set(xtl_VERSION ${XTL_VERSION_MAJOR}.${XTL_VERSION_MINOR}.${XTL_VERSION_PATCH})
     # Note: This is not SEMVER compatible comparison
-    if( NOT ${xtl_VERSION} VERSION_GREATER_EQUAL ${xtl_REQUIRED_VERSION})
+    if(${xtl_VERSION} VERSION_LESS ${xtl_REQUIRED_VERSION})
         message(ERROR "Mismatch xtl versions. Found '${xtl_VERSION}' but requires: '${xtl_REQUIRED_VERSION}'")
     else()
         message(STATUS "Found xtl v${xtl_VERSION}")
@@ -59,11 +59,11 @@ if(XTENSOR_USE_TBB AND XTENSOR_USE_OPENMP)
 endif()
 
 if(XTENSOR_USE_XSIMD)
-    set(xsimd_REQUIRED_VERSION 7.4.4)
+    set(xsimd_REQUIRED_VERSION 9.0.1)
     if(TARGET xsimd)
         set(xsimd_VERSION ${XSIMD_VERSION_MAJOR}.${XSIMD_VERSION_MINOR}.${XSIMD_VERSION_PATCH})
         # Note: This is not SEMVER compatible comparison
-        if( NOT ${xsimd_VERSION} VERSION_GREATER_EQUAL ${xsimd_REQUIRED_VERSION})
+        if(${xsimd_VERSION} VERSION_LESS ${xsimd_REQUIRED_VERSION})
             message(ERROR "Mismatch xsimd versions. Found '${xsimd_VERSION}' but requires: '${xsimd_REQUIRED_VERSION}'")
         else()
             message(STATUS "Found xsimd v${xsimd_VERSION}")
@@ -120,6 +120,8 @@ set(XTENSOR_HEADERS
     ${XTENSOR_INCLUDE_DIR}/xtensor/xassign.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xaxis_iterator.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xaxis_slice_iterator.hpp
+    ${XTENSOR_INCLUDE_DIR}/xtensor/xblockwise_reducer.hpp
+    ${XTENSOR_INCLUDE_DIR}/xtensor/xblockwise_reducer_functors.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xbroadcast.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xbuffer_adaptor.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xbuilder.hpp
@@ -151,6 +153,7 @@ set(XTENSOR_HEADERS
     ${XTENSOR_INCLUDE_DIR}/xtensor/xmasked_view.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xmath.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xmime.hpp
+    ${XTENSOR_INCLUDE_DIR}/xtensor/xmultiindex_iterator.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xnoalias.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xnorm.hpp
     ${XTENSOR_INCLUDE_DIR}/xtensor/xnpy.hpp
@@ -207,9 +210,6 @@ OPTION(CPP20 "enables C++20 (experimental)" OFF)
 OPTION(XTENSOR_DISABLE_EXCEPTIONS "Disable C++ exceptions" OFF)
 OPTION(DISABLE_MSVC_ITERATOR_CHECK "Disable the MVSC iterator check" ON)
 
-if(DOWNLOAD_GTEST OR GTEST_SRC_DIR)
-    set(BUILD_TESTS ON)
-endif()
 
 if(XTENSOR_ENABLE_ASSERT OR XTENSOR_CHECK_DIMENSION)
     add_definitions(-DXTENSOR_ENABLE_ASSERT)

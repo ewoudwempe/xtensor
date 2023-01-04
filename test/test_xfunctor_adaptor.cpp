@@ -7,7 +7,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 
 #include "xtensor/xarray.hpp"
 #include "xtensor/xcomplex.hpp"
@@ -87,7 +87,7 @@ namespace xt
 
         nooblean_adaptor aptvals(vals);
         EXPECT_EQ(aptvals, xvals);
-        auto begin = aptvals.storage_begin();
+        auto begin = aptvals.linear_begin();
 
         *begin = true;
         EXPECT_EQ(bool(*begin), true);
@@ -130,7 +130,7 @@ namespace xt
     TEST(xfunctor_adaptor, lhs_assignment)
     {
         using container_type = xarray<std::complex<double>>;
-        
+
         container_type e = {{3.0       , 1.0 + 1.0i},
                             {1.0 - 1.0i, 2.0       }};
 

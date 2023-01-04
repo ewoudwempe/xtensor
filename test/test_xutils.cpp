@@ -12,7 +12,7 @@
 #include <tuple>
 #include <complex>
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 #include "test_common_macros.hpp"
 #include "xtensor/xtensor.hpp"
 #include "xtensor/xarray.hpp"
@@ -129,6 +129,21 @@ namespace xt
         b = has_data_interface<decltype(vv2)>::value;
         EXPECT_TRUE(b);
         b = has_data_interface<decltype(v3)>::value;
+        EXPECT_FALSE(b);
+    }
+
+    TEST(utils, has_storage_type)
+    {
+        bool b = has_storage_type<xarray<int>>::value;
+        EXPECT_TRUE(b);
+
+        xarray<int> x, y;
+        b = has_storage_type<decltype(x + y)>::value;
+        EXPECT_FALSE(b);
+
+        b = has_storage_type<decltype(view(x, all()))>::value;
+        EXPECT_TRUE(b);
+        b = has_storage_type<decltype(view(2*x, all()))>::value;
         EXPECT_FALSE(b);
     }
 

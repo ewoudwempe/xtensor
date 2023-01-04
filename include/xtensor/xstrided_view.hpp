@@ -81,7 +81,7 @@ namespace xt
         using undecay_shape = S;
         using storage_getter = FST;
         using inner_storage_type = typename storage_getter::type;
-        using temporary_type = typename detail::xtype_for_shape<S>::template type<typename xexpression_type::value_type, L>;
+        using temporary_type = typename detail::xtype_for_shape<S>::template type<typename xexpression_type::value_type, xexpression_type::static_layout>;
         using storage_type = std::remove_reference_t<inner_storage_type>;
         static constexpr layout_type layout = L;
     };
@@ -155,8 +155,8 @@ namespace xt
 
         using inner_storage_type = typename base_type::inner_storage_type;
         using storage_type = typename base_type::storage_type;
-        using storage_iterator = typename storage_type::iterator;
-        using const_storage_iterator = typename storage_type::const_iterator;
+        using linear_iterator = typename storage_type::iterator;
+        using const_linear_iterator = typename storage_type::const_iterator;
 
         using iterable_base = select_iterable_base_t<L, xexpression_type::static_layout, self_type>;
         using inner_shape_type = typename base_type::inner_shape_type;
@@ -217,10 +217,10 @@ namespace xt
         template <class T>
         void fill(const T& value);
 
-        storage_iterator storage_begin();
-        storage_iterator storage_end();
-        const_storage_iterator storage_cbegin() const;
-        const_storage_iterator storage_cend() const;
+        linear_iterator linear_begin();
+        linear_iterator linear_end();
+        const_linear_iterator linear_cbegin() const;
+        const_linear_iterator linear_cend() const;
 
         template <class ST, class STEP = stepper>
         disable_indexed_stepper_t<STEP>
@@ -336,9 +336,9 @@ namespace xt
     >;
 
     /**
-    * @typedef xstrided_slice_vector
-    * @brief vector of slices used to build a `xstrided_view`
-    */
+     * @typedef xstrided_slice_vector
+     * @brief vector of slices used to build a `xstrided_view`
+     */
     using xstrided_slice_vector = std::vector<xstrided_slice<std::ptrdiff_t>>;
 
     template <layout_type L = layout_type::dynamic, class E, class S, class X>
@@ -439,7 +439,7 @@ namespace xt
     {
         if (layout() != layout_type::dynamic)
         {
-            std::fill(this->storage_begin(), this->storage_end(), value);
+            std::fill(this->linear_begin(), this->linear_end(), value);
         }
         else
         {
@@ -473,25 +473,25 @@ namespace xt
     }
 
     template <class CT, class S, layout_type L, class FST>
-    inline auto xstrided_view<CT, S, L, FST>::storage_begin() -> storage_iterator
+    inline auto xstrided_view<CT, S, L, FST>::linear_begin() -> linear_iterator
     {
         return this->storage().begin() + static_cast<std::ptrdiff_t>(data_offset());
     }
 
     template <class CT, class S, layout_type L, class FST>
-    inline auto xstrided_view<CT, S, L, FST>::storage_end() -> storage_iterator
+    inline auto xstrided_view<CT, S, L, FST>::linear_end() -> linear_iterator
     {
         return this->storage().begin() + static_cast<std::ptrdiff_t>(data_offset() + size());
     }
 
     template <class CT, class S, layout_type L, class FST>
-    inline auto xstrided_view<CT, S, L, FST>::storage_cbegin() const -> const_storage_iterator
+    inline auto xstrided_view<CT, S, L, FST>::linear_cbegin() const -> const_linear_iterator
     {
         return this->storage().cbegin() + static_cast<std::ptrdiff_t>(data_offset());
     }
 
     template <class CT, class S, layout_type L, class FST>
-    inline auto xstrided_view<CT, S, L, FST>::storage_cend() const -> const_storage_iterator
+    inline auto xstrided_view<CT, S, L, FST>::linear_cend() const -> const_linear_iterator
     {
         return this->storage().cbegin() + static_cast<std::ptrdiff_t>(data_offset() + size());
     }
@@ -616,7 +616,7 @@ namespace xt
         -> enable_simd_interface<T, void>
     {
         using align_mode = driven_align_mode_t<alignment, data_alignment>;
-        xt_simd::store_simd<value_type, typename simd::value_type>(&(storage()[i]), e, align_mode());
+        xt_simd::store_as(&(storage()[i]), e, align_mode());
     }
 
     template <class CT, class S, layout_type L, class FST>
@@ -625,7 +625,7 @@ namespace xt
         -> enable_simd_interface<T, simd_return_type<requested_type>>
     {
         using align_mode = driven_align_mode_t<alignment, data_alignment>;
-        return xt_simd::load_simd<value_type, requested_type>(&(storage()[i]), align_mode());
+        return xt_simd::load_as<requested_type>(&(storage()[i]), align_mode());
     }
 
     template <class CT, class S, layout_type L, class FST>

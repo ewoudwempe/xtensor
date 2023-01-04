@@ -7,7 +7,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 #include "test_common_macros.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xbuilder.hpp"
@@ -742,7 +742,7 @@ namespace xt
 
     TEST(xstrided_view, on_xbroadcast)
     {
-        xarray<double, layout_type::column_major> a = 
+        xarray<double, layout_type::column_major> a =
           {{  0.0,  1.0,  2.0},
            { 10.0, 11.0, 12.0}};
 

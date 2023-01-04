@@ -29,6 +29,12 @@
 
 namespace xt
 {
+    /**
+     * @defgroup xt_xfunctor_view
+     *
+     * Chunked array container.
+     * Defined in ``xtensor/xfunctor_view.hpp``
+     */
 
     /************************************************
      * xfunctor_view and xfunctor_adaptor extension *
@@ -132,10 +138,10 @@ namespace xt
         template <class S, layout_type L>
         using const_reverse_broadcast_iterator = xfunctor_iterator<functor_type, typename xexpression_type::template const_reverse_broadcast_iterator<S, L>>;
 
-        using storage_iterator = xfunctor_iterator<functor_type, typename xexpression_type::storage_iterator>;
-        using const_storage_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_storage_iterator>;
-        using reverse_storage_iterator = xfunctor_iterator<functor_type, typename xexpression_type::reverse_storage_iterator>;
-        using const_reverse_storage_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_reverse_storage_iterator>;
+        using linear_iterator = xfunctor_iterator<functor_type, typename xexpression_type::linear_iterator>;
+        using const_linear_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_linear_iterator>;
+        using reverse_linear_iterator = xfunctor_iterator<functor_type, typename xexpression_type::reverse_linear_iterator>;
+        using const_reverse_linear_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_reverse_linear_iterator>;
 
         using iterator = xfunctor_iterator<functor_type, typename xexpression_type::iterator>;
         using const_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_iterator>;
@@ -293,21 +299,21 @@ namespace xt
         template <class S, layout_type L = XTENSOR_DEFAULT_TRAVERSAL>
         const_reverse_broadcast_iterator<S, L> crend(const S& shape) const noexcept;
 
-        storage_iterator storage_begin() noexcept;
-        storage_iterator storage_end() noexcept;
+        linear_iterator linear_begin() noexcept;
+        linear_iterator linear_end() noexcept;
 
-        const_storage_iterator storage_begin() const noexcept;
-        const_storage_iterator storage_end() const noexcept;
-        const_storage_iterator storage_cbegin() const noexcept;
-        const_storage_iterator storage_cend() const noexcept;
+        const_linear_iterator linear_begin() const noexcept;
+        const_linear_iterator linear_end() const noexcept;
+        const_linear_iterator linear_cbegin() const noexcept;
+        const_linear_iterator linear_cend() const noexcept;
 
-        reverse_storage_iterator storage_rbegin() noexcept;
-        reverse_storage_iterator storage_rend() noexcept;
+        reverse_linear_iterator linear_rbegin() noexcept;
+        reverse_linear_iterator linear_rend() noexcept;
 
-        const_reverse_storage_iterator storage_rbegin() const noexcept;
-        const_reverse_storage_iterator storage_rend() const noexcept;
-        const_reverse_storage_iterator storage_crbegin() const noexcept;
-        const_reverse_storage_iterator storage_crend() const noexcept;
+        const_reverse_linear_iterator linear_rbegin() const noexcept;
+        const_reverse_linear_iterator linear_rend() const noexcept;
+        const_reverse_linear_iterator linear_crbegin() const noexcept;
+        const_reverse_linear_iterator linear_crend() const noexcept;
 
         template <class S>
         stepper stepper_begin(const S& shape) noexcept;
@@ -389,23 +395,23 @@ namespace xt
     };
 
     /**
-     * @class xfunctor_view
-     * @brief View of an xexpression .
+     * View of an xexpression .
      *
-     * The xfunctor_view class is an expression addressing its elements by applying a functor to the
-     * corresponding element of an underlying expression. Unlike e.g. xgenerator, an xfunctor_view is
-     * an lvalue. It is used e.g. to access real and imaginary parts of complex expressions.
+     * The xt::xfunctor_view class is an expression addressing its elements by applying a functor to the
+     * corresponding element of an underlying expression.
+     * Unlike e.g. xgenerator, an xt::xfunctor_view is an lvalue.
+     * It is used e.g. to access real and imaginary parts of complex expressions.
      *
-     * xfunctor_view has a view semantics and can be used on any expression.
-     * For a similar feature with a container semantics, one can use \ref xfunctor_adaptor.
+     * xt::xfunctor_view has a view semantics and can be used on any expression.
+     * For a similar feature with a container semantics, one can use xt::xfunctor_adaptor.
      *
-     * xfunctor_view is not meant to be used directly, but through helper functions such
-     * as \ref real or \ref imag.
+     * xt::xfunctor_view is not meant to be used directly, but through helper functions such
+     * as xt::real or xt::imag.
      *
+     * @ingroup xt_xfunctor_view
      * @tparam F the functor type to be applied to the elements of specified expression.
-     * @tparam CT the closure type of the \ref xexpression type underlying this view
-     *
-     * @sa real, imag
+     * @tparam CT the closure type of the xt::xexpression type underlying this view
+     * @see xt::real, xt::imag
      */
     template <class F, class CT>
     class xfunctor_view : public xfunctor_applier_base<xfunctor_view<F, CT>>,
@@ -466,16 +472,15 @@ namespace xt
     };
 
     /**
-     * @class xfunctor_adaptor
-     * @brief Adapt a container with a functor, forwarding methods such as resize / reshape.
+     * Adapt a container with a functor, forwarding methods such as resize / reshape.
      *
-     * xfunctor_adaptor has a container semantics and can only be used with containers.
-     * For a similar feature with a view semantics, one can use \ref xfunctor_view.
+     * xt::xfunctor_adaptor has a container semantics and can only be used with containers.
+     * For a similar feature with a view semantics, one can use xt::xfunctor_view.
      *
+     * @ingroup xt_xfunctor_view
      * @tparam F the functor type to be applied to the elements of specified expression.
-     * @tparam CT the closure type of the \ref xexpression type underlying this view
-     *
-     * @sa xfunctor_view
+     * @tparam CT the closure type of the xt::xexpression type underlying this view
+     * @see xt::xfunctor_view
      */
     template <class F, class CT>
     class xfunctor_adaptor : public xfunctor_applier_base<xfunctor_adaptor<F, CT>>,
@@ -644,7 +649,7 @@ namespace xt
     //@{
 
     /**
-     * Constructs an xfunctor_applier_base expression wrappering the specified \ref xexpression.
+     * Constructs an xfunctor_applier_base expression wrappering the specified xt::xexpression.
      *
      * @param e the underlying expression
      */
@@ -655,11 +660,11 @@ namespace xt
     }
 
     /**
-    * Constructs an xfunctor_applier_base expression wrappering the specified \ref xexpression.
-    *
-    * @param func the functor to be applied to the elements of the underlying expression.
-    * @param e the underlying expression
-    */
+     * Constructs an xfunctor_applier_base expression wrappering the specified xt::xexpression.
+     *
+     * @param func the functor to be applied to the elements of the underlying expression.
+     * @param e the underlying expression
+     */
     template <class D>
     template <class Func, class E>
     inline xfunctor_applier_base<D>::xfunctor_applier_base(Func&& func, E&& e) noexcept
@@ -671,6 +676,7 @@ namespace xt
     /**
      * @name Size and shape
      */
+
     /**
      * Returns the size of the expression.
      */
@@ -726,6 +732,7 @@ namespace xt
     /**
      * @name Data
      */
+
     /**
      * Returns a reference to the element at the specified position in the expression.
      * @param args a list of indices specifying the position in the function. Indices
@@ -875,10 +882,11 @@ namespace xt
     }
 
     /**
-    * Checks whether the xfunctor_applier_base can be linearly assigned to an expression
-    * with the specified strides.
-    * @return a boolean indicating whether a linear assign is possible
-    */
+     * Checks whether the xfunctor_applier_base can be linearly assigned to an expression
+     * with the specified strides.
+     *
+     * @return a boolean indicating whether a linear assign is possible
+     */
     template <class D>
     template <class S>
     inline bool xfunctor_applier_base<D>::has_linear_assign(const S& strides) const
@@ -1135,6 +1143,7 @@ namespace xt
     /**
      * @name Reverse broadcast iterators
      */
+
     /**
      * Returns an iterator to the first element of the expression. The
      * iteration is broadcasted to the specified shape.
@@ -1221,75 +1230,75 @@ namespace xt
     //@}
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_begin() noexcept -> storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_begin() noexcept -> linear_iterator
     {
-        return storage_iterator(m_e.storage_begin(), &m_functor);
+        return linear_iterator(m_e.linear_begin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_end() noexcept -> storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_end() noexcept -> linear_iterator
     {
-        return storage_iterator(m_e.storage_end(), &m_functor);
+        return linear_iterator(m_e.linear_end(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_begin() const noexcept -> const_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_begin() const noexcept -> const_linear_iterator
     {
-        return const_storage_iterator(m_e.storage_begin(), &m_functor);
+        return const_linear_iterator(m_e.linear_begin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_end() const noexcept -> const_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_end() const noexcept -> const_linear_iterator
     {
-        return const_storage_iterator(m_e.storage_end(), &m_functor);
+        return const_linear_iterator(m_e.linear_end(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_cbegin() const noexcept -> const_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_cbegin() const noexcept -> const_linear_iterator
     {
-        return const_storage_iterator(m_e.storage_cbegin(), &m_functor);
+        return const_linear_iterator(m_e.linear_cbegin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_cend() const noexcept -> const_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_cend() const noexcept -> const_linear_iterator
     {
-        return const_storage_iterator(m_e.storage_cend(), &m_functor);
+        return const_linear_iterator(m_e.linear_cend(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rbegin() noexcept -> reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_rbegin() noexcept -> reverse_linear_iterator
     {
-        return reverse_storage_iterator(m_e.storage_rbegin(), &m_functor);
+        return reverse_linear_iterator(m_e.linear_rbegin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rend() noexcept -> reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_rend() noexcept -> reverse_linear_iterator
     {
-        return reverse_storage_iterator(m_e.storage_rend(), &m_functor);
+        return reverse_linear_iterator(m_e.linear_rend(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rbegin() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_rbegin() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(m_e.storage_rbegin(), &m_functor);
+        return const_reverse_linear_iterator(m_e.linear_rbegin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rend() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_rend() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(m_e.storage_rend(), &m_functor);
+        return const_reverse_linear_iterator(m_e.linear_rend(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_crbegin() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_crbegin() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(m_e.storage_crbegin(), &m_functor);
+        return const_reverse_linear_iterator(m_e.linear_crbegin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_crend() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_crend() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(m_e.storage_crend(), &m_functor);
+        return const_reverse_linear_iterator(m_e.linear_crend(), &m_functor);
     }
 
     /***************
@@ -1397,7 +1406,7 @@ namespace xt
 
         if (this->layout() == de.layout())
         {
-            std::copy(de.storage_begin(), de.storage_end(), this->storage_begin());
+            std::copy(de.linear_begin(), de.linear_end(), this->linear_begin());
         }
         else
         {

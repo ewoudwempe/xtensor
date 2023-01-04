@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xtensor.hpp"
 #include "xtensor/xhistogram.hpp"
@@ -171,4 +171,3 @@ namespace xt
         EXPECT_EQ(count, xt::cast<double>(py_count));
     }
 }
-

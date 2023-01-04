@@ -7,7 +7,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "gtest/gtest.h"
+#include "test_common_macros.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xadapt.hpp"
 #include "xtensor/xrandom.hpp"
@@ -41,7 +41,7 @@ namespace xt
         EXPECT_EQ(expected, e(1, 1));
 
         auto t = v + 3;
-		EXPECT_DOUBLE_EQ((e_copy(1, 1) + 6), t(0));
+        EXPECT_DOUBLE_EQ((e_copy(1, 1) + 6), t(0));
         EXPECT_EQ((e(1, 1) + 3), t(0));
 
         v = broadcast(123, v.shape());
@@ -53,6 +53,15 @@ namespace xt
         v = as;
         EXPECT_TRUE(all(equal(v, as)));
         EXPECT_EQ(3, e(2, 2));
+    }
+
+    TEST(xindex_view, indices_const)
+    {
+        xarray<double> const e = xt::random::rand<double>({3, 3});
+        auto v = index_view(e, {{1ul, 1ul}, {1ul, 2ul}, {2ul, 2ul}});
+        EXPECT_EQ(e(1, 1), v(0));
+        auto const vc = index_view(e, {{1ul, 1ul}, {1ul, 2ul}, {2ul, 2ul}});
+        EXPECT_EQ(vc(0), v(0));
     }
 
     TEST(xindex_view, boolean)
@@ -158,7 +167,7 @@ namespace xt
     {
         xarray<int> a = {{{1, 3}, {2, 4}}, {{5, 7}, {6, 8}}};
         xarray<bool> cond = {{{true, true}, {false, false}}, {{true, true}, {false, false}}};
-        
+
         xarray<int> resc = xt::filter<xt::layout_type::column_major>(a, cond);
         xarray<int> expc = {1, 5 ,3, 7};
         EXPECT_EQ(resc, expc);
