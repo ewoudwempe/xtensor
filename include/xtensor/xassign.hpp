@@ -435,6 +435,7 @@ namespace xt
         constexpr bool simd_assign = traits::simd_assign();
         constexpr bool simd_linear_assign = traits::simd_linear_assign();
         constexpr bool simd_strided_assign = traits::simd_strided_assign();
+        constexpr bool strided_assign = traits::strided_assign();
         if (linear_assign)
         {
             if (simd_linear_assign || traits::simd_linear_assign(de1, de2))
@@ -451,7 +452,7 @@ namespace xt
                 linear_assigner<false>::run(de1, de2);
             }
         }
-        else if (simd_strided_assign && de1.layout() == de2.layout())
+        else if (simd_strided_assign)
         {
             strided_loop_assigner<simd_strided_assign>::run(de1, de2);
         }
@@ -714,6 +715,7 @@ namespace xt
 #if defined(XTENSOR_USE_TBB)
         if (size >= XTENSOR_TBB_THRESHOLD)
         {
+            static tbb::affinity_partitioner ap;
             tbb::parallel_for(
                 align_begin,
                 align_end,
@@ -724,7 +726,7 @@ namespace xt
                         i,
                         e2.template load_simd<rhs_align_mode, value_type>(i)
                     );
-                }
+                }, ap
             );
         }
         else
@@ -1042,34 +1044,23 @@ namespace xt
     {
         bool is_row_major = true;
         using fallback_assigner = stepper_assigner<E1, E2, default_assignable_layout(E1::static_layout)>;
-        if (E1::static_layout == layout_type::dynamic)
-        {
-            layout_type dynamic_layout = e1.layout();
 
-            switch (dynamic_layout)
-            {
-                case layout_type::row_major:
-                    is_row_major = true;
-                    break;
-                case layout_type::column_major:
-                    is_row_major = false;
-                    break;
-                default:
-                    return fallback_assigner(e1, e2).run();
-            }
-        }
-        else if (E1::static_layout == layout_type::row_major)
-        {
+        bool mismatch_colrow = (e1.layout() == layout_type::row_major && e2.layout() == layout_type::column_major)
+                               || (e2.layout() == layout_type::row_major && e1.layout() == layout_type::column_major);
+        if (mismatch_colrow)
+            return fallback_assigner(e1, e2).run();
+
+        bool de1_row_contiguous = e1.strides()[e1.strides().size()-1] == 1;
+        bool de1_col_contiguous = e1.strides()[0] == 1;
+        bool de2_row_contiguous = e2.strides()[e2.strides().size()-1] == 1;
+        bool de2_col_contiguous = e2.strides()[0] == 1;
+
+        if (de1_row_contiguous && de2_row_contiguous)
             is_row_major = true;
-        }
-        else if (E1::static_layout == layout_type::column_major)
-        {
+        else if (de1_col_contiguous && de2_col_contiguous)
             is_row_major = false;
-        }
         else
-        {
-            XTENSOR_THROW(std::runtime_error, "Illegal layout set (layout_type::any?).");
-        }
+            return fallback_assigner(e1, e2).run();
 
         std::size_t inner_loop_size, outer_loop_size, cut;
         std::tie(inner_loop_size, outer_loop_size, cut) = strided_assign_detail::get_loop_sizes(
@@ -1168,7 +1159,54 @@ namespace xt
 			}
 		}
 		else {
-		
+#elif defined(strided_parallel_assign) && defined(XTENSOR_USE_TBB)
+        if (outer_loop_size > 20) {
+          tbb::parallel_for(0ul, outer_loop_size,
+                          [&, fct_stepper, res_stepper, idx](tbb::blocked_range<size_t> const &r) {
+                              std::size_t first_step = true;
+//#pragma omp parallel for schedule(static) firstprivate(first_step, fct_stepper, res_stepper, idx)
+                              for (std::size_t ox = r.begin(); ox < r.end(); ++ox) {
+                                  if (first_step) {
+                                      is_row_major ?
+                                      strided_assign_detail::idx_tools<layout_type::row_major>::nth_idx(ox, idx,
+                                                                                                        max_shape) :
+                                      strided_assign_detail::idx_tools<layout_type::column_major>::nth_idx(ox, idx,
+                                                                                                           max_shape);
+
+                                      for (std::size_t i = 0; i < idx.size(); ++i) {
+                                          fct_stepper.step(i + step_dim, idx[i]);
+                                          res_stepper.step(i + step_dim, idx[i]);
+                                      }
+                                      first_step = false;
+                                  }
+
+                                  for (std::size_t i = 0; i < simd_size; ++i) {
+                                      res_stepper.template store_simd<simd_type>(
+                                              fct_stepper.template step_simd<value_type>());
+                                  }
+                                  for (std::size_t i = 0; i < simd_rest; ++i) {
+                                      *(res_stepper) = conditional_cast<needs_cast, e1_value_type>(*(fct_stepper));
+                                      res_stepper.step_leading();
+                                      fct_stepper.step_leading();
+                                  }
+
+                                  // next unaligned index
+                                  is_row_major ?
+                                  strided_assign_detail::idx_tools<layout_type::row_major>::next_idx(idx, max_shape) :
+                                  strided_assign_detail::idx_tools<layout_type::column_major>::next_idx(idx, max_shape);
+
+                                  // need to step E1 as well if not contigous assign (e.g. view)
+                                  fct_stepper.to_begin();
+                                  res_stepper.to_begin();
+                                  for (std::size_t i = 0; i < idx.size(); ++i) {
+                                      fct_stepper.step(i + step_dim, idx[i]);
+                                      res_stepper.step(i + step_dim, idx[i]);
+                                  }
+                              }
+                          });
+    }
+		else {
+
 #endif
         for (std::size_t ox = 0; ox < outer_loop_size; ++ox)
         {
