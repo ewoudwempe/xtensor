@@ -1,24 +1,32 @@
 /***************************************************************************
-* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
-* Copyright (c) QuantStack                                                 *
-*                                                                          *
-* Distributed under the terms of the BSD 3-Clause License.                 *
-*                                                                          *
-* The full license is in the file LICENSE, distributed with this software. *
-****************************************************************************/
+ * Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+ * Copyright (c) QuantStack                                                 *
+ *                                                                          *
+ * Distributed under the terms of the BSD 3-Clause License.                 *
+ *                                                                          *
+ * The full license is in the file LICENSE, distributed with this software. *
+ ****************************************************************************/
 
 #ifndef XTENSOR_SORT_HPP
 #define XTENSOR_SORT_HPP
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
+#include <xtl/xcompare.hpp>
+
+#include "xadapt.hpp"
 #include "xarray.hpp"
 #include "xeval.hpp"
-#include "xslice.hpp"  // for xnone
+#include "xindex_view.hpp"
 #include "xmanipulation.hpp"
+#include "xmath.hpp"
+#include "xslice.hpp"  // for xnone
 #include "xtensor.hpp"
 #include "xtensor_config.hpp"
+#include "xtensor_forward.hpp"
+#include "xview.hpp"
 
 namespace xt
 {
@@ -45,17 +53,26 @@ namespace xt
 
             if (ev.layout() == layout_type::row_major)
             {
-                n_iters = std::accumulate(ev.shape().begin(), ev.shape().end() - 1,
-                                          std::size_t(1), std::multiplies<>());
-                secondary_stride = adjust_secondary_stride(ev.strides()[ev.dimension() - 2],
-                                                           *(ev.shape().end() - 1));
+                n_iters = std::accumulate(
+                    ev.shape().begin(),
+                    ev.shape().end() - 1,
+                    std::size_t(1),
+                    std::multiplies<>()
+                );
+                secondary_stride = adjust_secondary_stride(
+                    ev.strides()[ev.dimension() - 2],
+                    *(ev.shape().end() - 1)
+                );
             }
             else
             {
-                n_iters = std::accumulate(ev.shape().begin() + 1, ev.shape().end(),
-                                          std::size_t(1), std::multiplies<>());
-                secondary_stride = adjust_secondary_stride(ev.strides()[1],
-                                                           *(ev.shape().begin()));
+                n_iters = std::accumulate(
+                    ev.shape().begin() + 1,
+                    ev.shape().end(),
+                    std::size_t(1),
+                    std::multiplies<>()
+                );
+                secondary_stride = adjust_secondary_stride(ev.strides()[1], *(ev.shape().begin()));
             }
 
             std::ptrdiff_t offset = 0;
@@ -146,8 +163,7 @@ namespace xt
         };
 
         template <class VT>
-        struct flatten_sort_result_type
-            : flatten_sort_result_type_impl<common_tensor_type_t<VT>>
+        struct flatten_sort_result_type : flatten_sort_result_type_impl<common_tensor_type_t<VT>>
         {
         };
 
@@ -215,7 +231,15 @@ namespace xt
         std::size_t ax = normalize_axis(de.dimension(), axis);
 
         eval_type res;
-        detail::run_lambda_over_axis(de, res, ax, [](auto begin, auto end) { std::sort(begin, end); });
+        detail::run_lambda_over_axis(
+            de,
+            res,
+            ax,
+            [](auto begin, auto end)
+            {
+                std::sort(begin, end);
+            }
+        );
         return res;
     }
 
@@ -266,15 +290,15 @@ namespace xt
         template <class T>
         struct argsort_result_type
         {
-            using type = typename rebind_value_type<typename T::temporary_type::size_type,
-                                                    typename T::temporary_type>::type;
+            using type = typename rebind_value_type<typename T::temporary_type::size_type, typename T::temporary_type>::type;
         };
 
         template <class T>
         struct linear_argsort_result_type
         {
-            using type = typename flatten_rebind_value_type<typename T::temporary_type::size_type,
-                                                            typename T::temporary_type>::type;
+            using type = typename flatten_rebind_value_type<
+                typename T::temporary_type::size_type,
+                typename T::temporary_type>::type;
         };
 
         template <class Ed, class Ei>
@@ -285,15 +309,23 @@ namespace xt
 
             if (data.layout() == layout_type::row_major)
             {
-                n_iters = std::accumulate(data.shape().begin(), data.shape().end() - 1,
-                                          std::size_t(1), std::multiplies<>());
+                n_iters = std::accumulate(
+                    data.shape().begin(),
+                    data.shape().end() - 1,
+                    std::size_t(1),
+                    std::multiplies<>()
+                );
                 data_secondary_stride = static_cast<std::ptrdiff_t>(data.shape(data.dimension() - 1));
                 inds_secondary_stride = static_cast<std::ptrdiff_t>(inds.shape(inds.dimension() - 1));
             }
             else
             {
-                n_iters = std::accumulate(data.shape().begin() + 1, data.shape().end(),
-                                          std::size_t(1), std::multiplies<>());
+                n_iters = std::accumulate(
+                    data.shape().begin() + 1,
+                    data.shape().end(),
+                    std::size_t(1),
+                    std::multiplies<>()
+                );
                 data_secondary_stride = static_cast<std::ptrdiff_t>(data.shape(0));
                 inds_secondary_stride = static_cast<std::ptrdiff_t>(inds.shape(0));
             }
@@ -301,9 +333,11 @@ namespace xt
             auto ptr = data.data();
             auto indices_ptr = inds.data();
 
-            for (std::size_t i = 0; i < n_iters; ++i, ptr += data_secondary_stride, indices_ptr += inds_secondary_stride)
+            for (std::size_t i = 0; i < n_iters;
+                 ++i, ptr += data_secondary_stride, indices_ptr += inds_secondary_stride)
             {
-                auto comp = [&ptr](std::size_t x, std::size_t y) {
+                auto comp = [&ptr](std::size_t x, std::size_t y)
+                {
                     return *(ptr + x) < *(ptr + y);
                 };
                 std::iota(indices_ptr, indices_ptr + inds_secondary_stride, 0);
@@ -323,7 +357,8 @@ namespace xt
             using result_type = R;
             result_type result;
             result.resize({de.size()});
-            auto comp = [&ad](std::size_t x, std::size_t y) {
+            auto comp = [&ad](std::size_t x, std::size_t y)
+            {
                 return ad[x] < ad[y];
             };
             std::iota(result.begin(), result.end(), 0);
@@ -405,30 +440,34 @@ namespace xt
      * xt::xarray<float> a = {1, 10, -10, 123};
      * std::cout << xt::partition(a, 0) << std::endl; // {-10, 1, 123, 10} the correct entry at index 0
      * std::cout << xt::partition(a, 3) << std::endl; // {1, 10, -10, 123} the correct entry at index 3
-     * std::cout << xt::partition(a, {0, 3}) << std::endl; // {-10, 1, 10, 123} the correct entries at index 0 and 3
-     * \endcode
+     * std::cout << xt::partition(a, {0, 3}) << std::endl; // {-10, 1, 10, 123} the correct entries at index 0
+     * and 3 \endcode
      *
      * @ingroup xt_xsort
      * @param e input xexpression
      * @param kth_container a container of ``indices`` that should contain the correctly sorted value
-     * @param axis either integer (default = -1) to sort along last axis or ``xnone()`` to flatten before sorting
+     * @param axis either integer (default = -1) to sort along last axis or ``xnone()`` to flatten before
+     * sorting
      *
      * @return partially sorted xcontainer
      */
-    template <class E, class C, class R = detail::flatten_sort_result_type_t<E>,
-              class = std::enable_if_t<!xtl::is_integral<C>::value, int>>
+    template <
+        class E,
+        class C,
+        class R = detail::flatten_sort_result_type_t<E>,
+        class = std::enable_if_t<!xtl::is_integral<C>::value, int>>
     inline R partition(const xexpression<E>& e, const C& kth_container, placeholders::xtuph /*ax*/)
     {
         const auto& de = e.derived_cast();
 
-        R ev = R::from_shape({ de.size() });
+        R ev = R::from_shape({de.size()});
         C kth_copy = kth_container;
         if (kth_copy.size() > 1)
         {
             std::sort(kth_copy.begin(), kth_copy.end());
         }
 
-        std::copy(de.linear_cbegin(), de.linear_cend(), ev.linear_begin()); // flatten
+        std::copy(de.linear_cbegin(), de.linear_cend(), ev.linear_begin());  // flatten
         std::size_t k_last = kth_copy.back();
         std::nth_element(ev.linear_begin(), ev.linear_begin() + k_last, ev.linear_end());
 
@@ -442,9 +481,13 @@ namespace xt
     }
 
     template <class E, class I, std::size_t N, class R = detail::flatten_sort_result_type_t<E>>
-    inline R partition(const xexpression<E>& e, const I(&kth_container)[N], placeholders::xtuph tag)
+    inline R partition(const xexpression<E>& e, const I (&kth_container)[N], placeholders::xtuph tag)
     {
-        return partition(e, xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container), tag);
+        return partition(
+            e,
+            xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container),
+            tag
+        );
     }
 
     template <class E, class R = detail::flatten_sort_result_type_t<E>>
@@ -490,7 +533,8 @@ namespace xt
             res = de;
         }
 
-        auto lambda = [&kth](auto begin, auto end) {
+        auto lambda = [&kth](auto begin, auto end)
+        {
             std::nth_element(begin, begin + kth, end);
         };
         detail::call_over_leading_axis(res, lambda);
@@ -510,9 +554,13 @@ namespace xt
     }
 
     template <class E, class T, std::size_t N>
-    inline auto partition(const xexpression<E>& e, const T(&kth_container)[N], std::ptrdiff_t axis = -1)
+    inline auto partition(const xexpression<E>& e, const T (&kth_container)[N], std::ptrdiff_t axis = -1)
     {
-        return partition(e, xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container), axis);
+        return partition(
+            e,
+            xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container),
+            axis
+        );
     }
 
     template <class E>
@@ -537,19 +585,22 @@ namespace xt
      * xt::xarray<float> a = {1, 10, -10, 123};
      * std::cout << xt::argpartition(a, 0) << std::endl; // {2, 0, 3, 1} the correct entry at index 0
      * std::cout << xt::argpartition(a, 3) << std::endl; // {0, 1, 2, 3} the correct entry at index 3
-     * std::cout << xt::argpartition(a, {0, 3}) << std::endl; // {2, 0, 1, 3} the correct entries at index 0 and 3
-     * \endcode
+     * std::cout << xt::argpartition(a, {0, 3}) << std::endl; // {2, 0, 1, 3} the correct entries at index 0
+     * and 3 \endcode
      *
      * @ingroup xt_xsort
      * @param e input xexpression
      * @param kth_container a container of ``indices`` that should contain the correctly sorted value
-     * @param axis either integer (default = -1) to sort along last axis or ``xnone()`` to flatten before sorting
+     * @param axis either integer (default = -1) to sort along last axis or ``xnone()`` to flatten before
+     * sorting
      *
      * @return xcontainer with indices of partial sort of input
      */
-    template <class E, class C,
-              class R = typename detail::linear_argsort_result_type<typename detail::sort_eval_type<E>::type>::type,
-              class = std::enable_if_t<!xtl::is_integral<C>::value, int>>
+    template <
+        class E,
+        class C,
+        class R = typename detail::linear_argsort_result_type<typename detail::sort_eval_type<E>::type>::type,
+        class = std::enable_if_t<!xtl::is_integral<C>::value, int>>
     inline R argpartition(const xexpression<E>& e, const C& kth_container, placeholders::xtuph)
     {
         using eval_type = typename detail::sort_eval_type<E>::type;
@@ -557,7 +608,7 @@ namespace xt
 
         const auto& de = e.derived_cast();
 
-        result_type ev = result_type::from_shape({ de.size() });
+        result_type ev = result_type::from_shape({de.size()});
 
         C kth_copy = kth_container;
         if (kth_copy.size() > 1)
@@ -565,7 +616,8 @@ namespace xt
             std::sort(kth_copy.begin(), kth_copy.end());
         }
 
-        auto arg_lambda = [&de](std::size_t a, std::size_t b) {
+        auto arg_lambda = [&de](std::size_t a, std::size_t b)
+        {
             return de[a] < de[b];
         };
 
@@ -583,9 +635,13 @@ namespace xt
     }
 
     template <class E, class I, std::size_t N>
-    inline auto argpartition(const xexpression<E>& e, const I(&kth_container)[N], placeholders::xtuph tag)
+    inline auto argpartition(const xexpression<E>& e, const I (&kth_container)[N], placeholders::xtuph tag)
     {
-        return argpartition(e, xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container), tag);
+        return argpartition(
+            e,
+            xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container),
+            tag
+        );
     }
 
     template <class E>
@@ -597,35 +653,46 @@ namespace xt
     namespace detail
     {
         template <class Ed, class Ei>
-        inline void argpartition_over_leading_axis(const Ed& data, Ei& inds, std::size_t kth, std::ptrdiff_t last)
+        inline void
+        argpartition_over_leading_axis(const Ed& data, Ei& inds, std::size_t kth, std::ptrdiff_t last)
         {
             std::size_t n_iters = 1;
             std::ptrdiff_t data_secondary_stride, inds_secondary_stride;
 
             if (data.layout() == layout_type::row_major)
             {
-                n_iters = std::accumulate(data.shape().begin(), data.shape().end() - 1,
-                                          std::size_t(1), std::multiplies<>());
+                n_iters = std::accumulate(
+                    data.shape().begin(),
+                    data.shape().end() - 1,
+                    std::size_t(1),
+                    std::multiplies<>()
+                );
                 data_secondary_stride = data.strides()[data.dimension() - 2];
                 inds_secondary_stride = inds.strides()[inds.dimension() - 2];
             }
             else
             {
-                n_iters = std::accumulate(data.shape().begin() + 1, data.shape().end(),
-                                          std::size_t(1), std::multiplies<>());
+                n_iters = std::accumulate(
+                    data.shape().begin() + 1,
+                    data.shape().end(),
+                    std::size_t(1),
+                    std::multiplies<>()
+                );
                 data_secondary_stride = data.strides()[1];
                 inds_secondary_stride = inds.strides()[1];
             }
 
             auto ptr = data.data();
             auto indices_ptr = inds.data();
-            auto comp = [&ptr](std::size_t x, std::size_t y) {
+            auto comp = [&ptr](std::size_t x, std::size_t y)
+            {
                 return *(ptr + x) < *(ptr + y);
             };
 
-            if (last == -1) // initialize
+            if (last == -1)  // initialize
             {
-                for (std::size_t i = 0; i < n_iters; ++i, ptr += data_secondary_stride, indices_ptr += inds_secondary_stride)
+                for (std::size_t i = 0; i < n_iters;
+                     ++i, ptr += data_secondary_stride, indices_ptr += inds_secondary_stride)
                 {
                     std::iota(indices_ptr, indices_ptr + inds_secondary_stride, 0);
                     std::nth_element(indices_ptr, indices_ptr + kth, indices_ptr + inds_secondary_stride, comp);
@@ -633,7 +700,8 @@ namespace xt
             }
             else
             {
-                for (std::size_t i = 0; i < n_iters; ++i, ptr += data_secondary_stride, indices_ptr += inds_secondary_stride)
+                for (std::size_t i = 0; i < n_iters;
+                     ++i, ptr += data_secondary_stride, indices_ptr += inds_secondary_stride)
                 {
                     std::nth_element(indices_ptr, indices_ptr + kth, indices_ptr + last, comp);
                 }
@@ -697,9 +765,13 @@ namespace xt
     }
 
     template <class E, class I, std::size_t N>
-    inline auto argpartition(const xexpression<E>& e, const I(&kth_container)[N], std::ptrdiff_t axis = -1)
+    inline auto argpartition(const xexpression<E>& e, const I (&kth_container)[N], std::ptrdiff_t axis = -1)
     {
-        return argpartition(e, xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container), axis);
+        return argpartition(
+            e,
+            xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container),
+            axis
+        );
     }
 
     template <class E>
@@ -708,6 +780,328 @@ namespace xt
         return argpartition(e, std::array<std::size_t, 1>({kth}), axis);
     }
 
+    /******************
+     *  xt::quantile  *
+     ******************/
+
+    namespace detail
+    {
+        template <class S, class I, class K, class O>
+        inline void select_indices_impl(
+            const S& shape,
+            const I& indices,
+            std::size_t axis,
+            std::size_t current_dim,
+            const K& current_index,
+            O& out
+        )
+        {
+            using id_t = typename K::value_type;
+            if ((current_dim < shape.size() - 1) && (current_dim == axis))
+            {
+                for (auto i : indices)
+                {
+                    auto idx = current_index;
+                    idx[current_dim] = i;
+                    select_indices_impl(shape, indices, axis, current_dim + 1, idx, out);
+                }
+            }
+            else if ((current_dim < shape.size() - 1) && (current_dim != axis))
+            {
+                for (id_t i = 0; xtl::cmp_less(i, shape[current_dim]); ++i)
+                {
+                    auto idx = current_index;
+                    idx[current_dim] = i;
+                    select_indices_impl(shape, indices, axis, current_dim + 1, idx, out);
+                }
+            }
+            else if ((current_dim == shape.size() - 1) && (current_dim == axis))
+            {
+                for (auto i : indices)
+                {
+                    auto idx = current_index;
+                    idx[current_dim] = i;
+                    out.push_back(std::move(idx));
+                }
+            }
+            else if ((current_dim == shape.size() - 1) && (current_dim != axis))
+            {
+                for (id_t i = 0; xtl::cmp_less(i, shape[current_dim]); ++i)
+                {
+                    auto idx = current_index;
+                    idx[current_dim] = i;
+                    out.push_back(std::move(idx));
+                }
+            }
+        }
+
+        template <class S, class I>
+        inline auto select_indices(const S& shape, const I& indices, std::size_t axis)
+        {
+            using index_type = get_strides_t<S>;
+            auto out = std::vector<index_type>();
+            select_indices_impl(shape, indices, axis, 0, xtl::make_sequence<index_type>(shape.size()), out);
+            return out;
+        }
+
+        // TODO remove when fancy index views are implemented
+        // Poor man's indexing along a single axis as in NumPy a[:, [1, 3, 4]]
+        template <class E, class I>
+        inline auto fancy_indexing(E&& e, const I& indices, std::ptrdiff_t axis)
+        {
+            std::size_t const ax = normalize_axis(e.dimension(), axis);
+            using shape_t = get_strides_t<typename std::decay_t<E>::shape_type>;
+            auto shape = xtl::forward_sequence<shape_t, decltype(e.shape())>(e.shape());
+            shape[ax] = indices.size();
+            return reshape_view(
+                index_view(std::forward<E>(e), select_indices(e.shape(), indices, ax)),
+                std::move(shape)
+            );
+        }
+
+        template <class T, class I, class P>
+        inline auto quantile_kth_gamma(std::size_t n, const P& probas, T alpha, T beta)
+        {
+            const auto m = alpha + probas * (T(1) - alpha - beta);
+            // Evaluting since reused a lot
+            const auto p_n_m = eval(probas * static_cast<T>(n) + m - 1);
+            // Previous (virtual) index, may be out of bounds
+            const auto j = floor(p_n_m);
+            const auto j_jp1 = concatenate(xtuple(j, j + 1));
+            // Both interpolation indices, k and k+1
+            const auto k_kp1 = xt::cast<std::size_t>(clip(j_jp1, T(0), T(n - 1)));
+            // Both interpolation coefficients, 1-gamma and gamma
+            const auto omg_g = concatenate(xtuple(T(1) - (p_n_m - j), p_n_m - j));
+            return std::make_pair(eval(k_kp1), eval(omg_g));
+        }
+
+        // TODO should implement unsqueeze rather
+        template <class S>
+        inline auto unsqueeze_shape(const S& shape, std::size_t axis)
+        {
+            XTENSOR_ASSERT(axis <= shape.size());
+            auto new_shape = xtl::forward_sequence<xt::svector<std::size_t>, decltype(shape)>(shape);
+            new_shape.insert(new_shape.begin() + axis, 1);
+            return new_shape;
+        }
+    }
+
+    /**
+     * Compute quantiles over the given axis.
+     *
+     * In a sorted array represneting a distribution of numbers, the quantile of a probability ``p``
+     * is the the cut value ``q`` such that a fraction ``p`` of the distribution is lesser or equal
+     * to ``q``.
+     * When the cutpoint falls between two elemnts of the sample distribution, a interpolation is
+     * computed using the @p alpha and @p beta coefficients, as descripted in
+     * (Hyndman and Fan, 1996).
+     *
+     * The algorithm partially sorts entries in a copy along the @p axis axis.
+     *
+     * @ingroup xt_xsort
+     * @param e Expression containing the distribution over which the quantiles are computed.
+     * @param probas An list of probability associated with each desired quantiles.
+     *        All elements must be in the range ``[0, 1]``.
+     * @param axis The dimension in which to compute the quantiles, *i.e* the axis representing the
+     *        distribution.
+     * @param alpha Interpolation parameter. Must be in the range ``[0, 1]]``.
+     * @param beta Interpolation parameter. Must be in the range ``[0, 1]]``.
+     * @tparam T The type in which the quatile are computed.
+     * @return An expression with as many dimensions as the input @p e.
+     *         The first axis correspond to the quantiles.
+     *         The other axes are the axes that remain after the reduction of @p e.
+     * @see (Hyndman and Fan, 1996) R. J. Hyndman and Y. Fan,
+     *      "Sample quantiles in statistical packages", The American Statistician,
+     *      50(4), pp. 361-365, 1996
+     * @see https://en.wikipedia.org/wiki/Quantile
+     */
+    template <class T = double, class E, class P>
+    inline auto quantile(E&& e, const P& probas, std::ptrdiff_t axis, T alpha, T beta)
+    {
+        XTENSOR_ASSERT(all(0. <= probas));
+        XTENSOR_ASSERT(all(probas <= 1.));
+        XTENSOR_ASSERT(0. <= alpha);
+        XTENSOR_ASSERT(alpha <= 1.);
+        XTENSOR_ASSERT(0. <= beta);
+        XTENSOR_ASSERT(beta <= 1.);
+
+        using tmp_shape_t = get_strides_t<typename std::decay_t<E>::shape_type>;
+        using id_t = typename tmp_shape_t::value_type;
+
+        std::size_t const ax = normalize_axis(e.dimension(), axis);
+        std::size_t const n = e.shape()[ax];
+        auto kth_gamma = detail::quantile_kth_gamma<T, id_t, P>(n, probas, alpha, beta);
+
+        // Select relevant values for computing interpolating quantiles
+        auto e_partition = xt::partition(std::forward<E>(e), kth_gamma.first, ax);
+        auto e_kth = detail::fancy_indexing(std::move(e_partition), std::move(kth_gamma.first), ax);
+
+        // Reshape interpolation coefficients
+        auto gm1_g_shape = xtl::make_sequence<tmp_shape_t>(e.dimension(), 1);
+        gm1_g_shape[ax] = kth_gamma.second.size();
+        auto gm1_g_reshaped = reshape_view(std::move(kth_gamma.second), std::move(gm1_g_shape));
+
+        // Compute interpolation
+        // TODO(C++20) use (and create) xt::lerp in C++
+        auto e_kth_g = std::move(e_kth) * std::move(gm1_g_reshaped);
+        // Reshape pairwise interpolate for suming along new axis
+        auto e_kth_g_shape = detail::unsqueeze_shape(e_kth_g.shape(), ax);
+        e_kth_g_shape[ax] = 2;
+        e_kth_g_shape[ax + 1] /= 2;
+        auto quantiles = xt::sum(reshape_view(std::move(e_kth_g), std::move(e_kth_g_shape)), ax);
+        // Cannot do a transpose on a non-strided expression so we have to eval
+        return moveaxis(eval(std::move(quantiles)), ax, 0);
+    }
+
+    // Static proba array overload
+    template <class T = double, class E, std::size_t N>
+    inline auto quantile(E&& e, const T (&probas)[N], std::ptrdiff_t axis, T alpha, T beta)
+    {
+        return quantile(std::forward<E>(e), adapt(probas, {N}), axis, alpha, beta);
+    }
+
+    /**
+     * Compute quantiles of the whole expression.
+     *
+     * The quantiles are computed over the whole expression, as if flatten in a one-dimensional
+     * expression.
+     *
+     * @ingroup xt_xsort
+     * @see xt::quantile(E&& e, P const& probas, std::ptrdiff_t axis, T alpha, T beta)
+     */
+    template <class T = double, class E, class P>
+    inline auto quantile(E&& e, const P& probas, T alpha, T beta)
+    {
+        return quantile(xt::ravel(std::forward<E>(e)), probas, 0, alpha, beta);
+    }
+
+    // Static proba array overload
+    template <class T = double, class E, std::size_t N>
+    inline auto quantile(E&& e, const T (&probas)[N], T alpha, T beta)
+    {
+        return quantile(std::forward<E>(e), adapt(probas, {N}), alpha, beta);
+    }
+
+    /**
+     * Quantile interpolation method.
+     *
+     * Predefined methods for interpolating quantiles, as defined in (Hyndman and Fan, 1996).
+     *
+     * @ingroup xt_xsort
+     * @see (Hyndman and Fan, 1996) R. J. Hyndman and Y. Fan,
+     *      "Sample quantiles in statistical packages", The American Statistician,
+     *      50(4), pp. 361-365, 1996
+     * @see xt::quantile(E&& e, P const& probas, std::ptrdiff_t axis, xt::quantile_method method)
+     */
+    enum class quantile_method
+    {
+        /** Method 4 of (Hyndman and Fan, 1996) with ``alpha=0`` and ``beta=1``. */
+        interpolated_inverted_cdf = 4,
+        /** Method 5 of (Hyndman and Fan, 1996) with ``alpha=1/2`` and ``beta=1/2``. */
+        hazen,
+        /** Method 6 of (Hyndman and Fan, 1996) with ``alpha=0`` and ``beta=0``. */
+        weibull,
+        /** Method 7 of (Hyndman and Fan, 1996) with ``alpha=1`` and ``beta=1``. */
+        linear,
+        /** Method 8 of (Hyndman and Fan, 1996) with ``alpha=1/3`` and ``beta=1/3``. */
+        median_unbiased,
+        /** Method 9 of (Hyndman and Fan, 1996) with ``alpha=3/8`` and ``beta=3/8``. */
+        normal_unbiased,
+    };
+
+    /**
+     * Compute quantiles over the given axis.
+     *
+     * The function takes the name of a predefined method to compute to interpolate between values.
+     *
+     * @ingroup xt_xsort
+     * @see xt::quantile_method
+     * @see xt::quantile(E&& e, P const& probas, std::ptrdiff_t axis, T alpha, T beta)
+     */
+    template <class T = double, class E, class P>
+    inline auto
+    quantile(E&& e, const P& probas, std::ptrdiff_t axis, quantile_method method = quantile_method::linear)
+    {
+        T alpha = 0.;
+        T beta = 0.;
+        switch (method)
+        {
+            case (quantile_method::interpolated_inverted_cdf):
+            {
+                alpha = 0.;
+                beta = 1.;
+                break;
+            }
+            case (quantile_method::hazen):
+            {
+                alpha = 0.5;
+                beta = 0.5;
+                break;
+            }
+            case (quantile_method::weibull):
+            {
+                alpha = 0.;
+                beta = 0.;
+                break;
+            }
+            case (quantile_method::linear):
+            {
+                alpha = 1.;
+                beta = 1.;
+                break;
+            }
+            case (quantile_method::median_unbiased):
+            {
+                alpha = 1. / 3.;
+                beta = 1. / 3.;
+                break;
+            }
+            case (quantile_method::normal_unbiased):
+            {
+                alpha = 3. / 8.;
+                beta = 3. / 8.;
+                break;
+            }
+        }
+        return quantile(std::forward<E>(e), probas, axis, alpha, beta);
+    }
+
+    // Static proba array overload
+    template <class T = double, class E, std::size_t N>
+    inline auto
+    quantile(E&& e, const T (&probas)[N], std::ptrdiff_t axis, quantile_method method = quantile_method::linear)
+    {
+        return quantile(std::forward<E>(e), adapt(probas, {N}), axis, method);
+    }
+
+    /**
+     * Compute quantiles of the whole expression.
+     *
+     * The quantiles are computed over the whole expression, as if flatten in a one-dimensional
+     * expression.
+     * The function takes the name of a predefined method to compute to interpolate between values.
+     *
+     * @ingroup xt_xsort
+     * @see xt::quantile_method
+     * @see xt::quantile(E&& e, P const& probas, std::ptrdiff_t axis, xt::quantile_method method)
+     */
+    template <class T = double, class E, class P>
+    inline auto quantile(E&& e, const P& probas, quantile_method method = quantile_method::linear)
+    {
+        return quantile(xt::ravel(std::forward<E>(e)), probas, 0, method);
+    }
+
+    // Static proba array overload
+    template <class T = double, class E, std::size_t N>
+    inline auto quantile(E&& e, const T (&probas)[N], quantile_method method = quantile_method::linear)
+    {
+        return quantile(std::forward<E>(e), adapt(probas, {N}), method);
+    }
+
+    /****************
+     *  xt::median  *
+     ****************/
+
     template <class E>
     inline typename std::decay_t<E>::value_type median(E&& e)
     {
@@ -715,7 +1109,7 @@ namespace xt
         auto sz = e.size();
         if (sz % 2 == 0)
         {
-            std::size_t szh = sz / 2; // integer floor div
+            std::size_t szh = sz / 2;  // integer floor div
             std::array<std::size_t, 2> kth = {szh - 1, szh};
             auto values = xt::partition(xt::flatten(e), kth);
             return (values[kth[0]] + values[kth[1]]) / value_type(2);
@@ -750,7 +1144,7 @@ namespace xt
 
         if (sz % 2 == 0)
         {
-            std::size_t szh = sz / 2; // integer floor div
+            std::size_t szh = sz / 2;  // integer floor div
             std::array<std::size_t, 2> kth = {szh - 1, szh};
             auto values = xt::partition(std::forward<E>(e), kth, static_cast<ptrdiff_t>(ax));
             sv[ax] = xt::range(szh - 1, szh + 1);
@@ -781,8 +1175,7 @@ namespace xt
         };
 
         template <layout_type L, class E, class F>
-        inline typename argfunc_result_type<E>::type
-        arg_func_impl(const E& e, std::size_t axis, F&& cmp)
+        inline typename argfunc_result_type<E>::type arg_func_impl(const E& e, std::size_t axis, F&& cmp)
         {
             using eval_type = typename detail::sort_eval_type<E>::type;
             using value_type = typename E::value_type;
@@ -802,12 +1195,17 @@ namespace xt
 
             // Excluding copy, copy all of shape except for axis
             std::copy(e.shape().cbegin(), e.shape().cbegin() + std::ptrdiff_t(axis), alt_shape.begin());
-            std::copy(e.shape().cbegin() + std::ptrdiff_t(axis) + 1, e.shape().cend(), alt_shape.begin() + std::ptrdiff_t(axis));
+            std::copy(
+                e.shape().cbegin() + std::ptrdiff_t(axis) + 1,
+                e.shape().cend(),
+                alt_shape.begin() + std::ptrdiff_t(axis)
+            );
 
             result_type result = result_type::from_shape(std::move(alt_shape));
             auto result_iter = result.template begin<L>();
 
-            auto arg_func_lambda = [&result_iter, &cmp](auto begin, auto end) {
+            auto arg_func_lambda = [&result_iter, &cmp](auto begin, auto end)
+            {
                 std::size_t idx = 0;
                 value_type val = *begin;
                 ++begin;
@@ -826,7 +1224,10 @@ namespace xt
             if (axis != detail::leading_axis(e))
             {
                 dynamic_shape<std::size_t> permutation, reverse_permutation;
-                std::tie(permutation, reverse_permutation) = detail::get_permutations(e.dimension(), axis, e.layout());
+                std::tie(
+                    permutation,
+                    reverse_permutation
+                ) = detail::get_permutations(e.dimension(), axis, e.layout());
 
                 // note: creating copy
                 eval_type input = transpose(e, permutation);
@@ -941,11 +1342,7 @@ namespace xt
 
         auto tmp = xtensor<value_type, 1>::from_shape({unique1.size()});
 
-        auto end = std::set_difference(
-            unique1.begin(), unique1.end(),
-            unique2.begin(), unique2.end(),
-            tmp.begin()
-        );
+        auto end = std::set_difference(unique1.begin(), unique1.end(), unique2.begin(), unique2.end(), tmp.begin());
 
         std::size_t sz = static_cast<std::size_t>(std::distance(tmp.begin(), end));
 
