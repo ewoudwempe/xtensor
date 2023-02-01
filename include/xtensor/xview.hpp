@@ -984,32 +984,13 @@ namespace xt
         return xtl::mpl::static_if<is_strided_view>(
             [&](auto self)
             {
-                if (static_layout != layout_type::dynamic)
-                {
-                    return static_layout;
-                }
-                else
-                {
-                    bool strides_match = do_strides_match(
-                        self(this)->shape(),
-                        self(this)->strides(),
-                        self(this)->m_e.layout(),
-                        true
-                    );
-                    return strides_match ? self(this)->m_e.layout() : layout_type::dynamic;
-                }
-            },
-            /* else */
-            [&](auto /*self*/)
-            {
 				return self(this)->m_e.layout()==layout_type::row_major ?
 					((self(this)->strides()[self(this)->strides().size()-1] == 1) ? self(this)->m_e.layout() : layout_type::dynamic) :
 					((self(this)->strides()[0] == 1) ? self(this)->m_e.layout() : layout_type::dynamic);
 					
                 bool strides_match = do_strides_match(self(this)->shape(), self(this)->strides(), self(this)->m_e.layout(), true);
                 return strides_match ? self(this)->m_e.layout() : layout_type::dynamic;
-            }
-        },
+            },
         /* else */ [&](auto /*self*/)
         {
 			std::cout << "View is not strided!" << std::endl;
