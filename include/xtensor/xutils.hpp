@@ -1023,19 +1023,11 @@ namespace xt
         using type = C<X, allocator>;
     };
 
-#if defined(__GNUC__) && __GNUC__ > 6 && !defined(__clang__) && __cplusplus >= 201703L
     template <class X, class T, std::size_t N>
     struct rebind_container<X, std::array<T, N>>
     {
         using type = std::array<X, N>;
     };
-#else
-    template <class X, template <class, std::size_t> class C, class T, std::size_t N>
-    struct rebind_container<X, C<T, N>>
-    {
-        using type = C<X, N>;
-    };
-#endif
 
     /********************
      * get_strides_type *
